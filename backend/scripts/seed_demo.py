@@ -11,7 +11,7 @@ import sys
 import urllib.request
 import zlib
 
-BASE = "http://localhost:8000/api/v1"
+BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000") + "/api/v1"
 
 
 def png_bytes(width: int, height: int, top_rgb, bottom_rgb) -> bytes:

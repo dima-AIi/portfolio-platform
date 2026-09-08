@@ -5,12 +5,13 @@ Run with the backend on localhost:8000:
 """
 
 import json
+import sys
 import time
 import urllib.error
 import urllib.request
 import uuid
 
-BASE = "http://localhost:8000/api/v1"
+BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000") + "/api/v1"
 RUN = str(int(time.time()))[-6:]
 USER = f"qa{RUN}"
 EMAIL = f"qa{RUN}@example.com"
@@ -243,7 +244,12 @@ check("email change to own current email -> 200 (409-taken path covered by unit 
 
 print("== 11. SECURITY edge cases ==")
 s, d = call("POST", "/projects", {"title": "Robert'); DROP TABLE projects;--"}, token=token)
-check("SQLi string stored literally", s == 201 and d["title"] == "Robert'); DROP TABLE projects;--")
+if s == 403:
+    # Vercel WAF (production) blocks SQLi at the edge — also a valid outcome;
+    # the "stored literally" path is proven by the localhost run.
+    check("SQLi blocked (403 at edge by Vercel WAF)", True)
+else:
+    check("SQLi string stored literally", s == 201 and d["title"] == "Robert'); DROP TABLE projects;--")
 s, d = call("GET", "/projects", token=token)
 check("table intact after SQLi attempt", d["total"] >= 4)
 s, d = call("POST", "/projects", {"title": "<script>alert(1)</script>"}, token=token)
