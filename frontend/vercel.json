@@ -4,11 +4,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://REPLACE_WITH_RENDER_URL.onrender.com/api/:path*"
+      "destination": "https://portfolio-backend-rdaw.onrender.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://REPLACE_WITH_RENDER_URL.onrender.com/uploads/:path*"
+      "destination": "https://portfolio-backend-rdaw.onrender.com/uploads/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
