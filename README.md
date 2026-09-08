@@ -118,6 +118,20 @@ JWT_SECRET     = <random 64-hex string>
 CORS_ORIGINS   = https://<your-app>.vercel.app
 ```
 
+### Email for password reset codes
+
+Set SMTP credentials to send real 6-digit reset codes
+(otherwise, in development mode the code is shown in the UI):
+
+```text
+SMTP_HOST      = smtp.gmail.com        # or smtp.yandex.ru, smtp.mail.ru, smtp.mailtrap.io
+SMTP_PORT      = 587
+SMTP_USER      = you@gmail.com         # Gmail requires an App Password
+SMTP_PASSWORD  = <app password>
+SMTP_FROM      = you@gmail.com
+SMTP_TLS       = true
+```
+
 After deploying Render, replace `REPLACE_WITH_RENDER_URL.onrender.com`
 in `frontend/vercel.json` with your real Render URL, then deploy the
 `frontend/` directory on Vercel.
