@@ -14,6 +14,17 @@ ALLOWED_IMAGE_TYPES = {
 }
 
 
+def has_valid_signature(content: bytes, extension: str) -> bool:
+    """Magic-bytes check: the real file format must match the declared one."""
+    if extension == ".png":
+        return content.startswith(b"\x89PNG\r\n\x1a\n")
+    if extension == ".jpg":
+        return content.startswith(b"\xff\xd8\xff")
+    if extension == ".webp":
+        return content[:4] == b"RIFF" and content[8:12] == b"WEBP"
+    return False
+
+
 def uploads_dir() -> str:
     path = settings.UPLOAD_DIR
     if not os.path.isabs(path):
@@ -37,8 +48,6 @@ async def save_image(file: UploadFile) -> str:
     """Validate and save an uploaded image. Returns public URL path."""
     validate_image(file)
     extension = ALLOWED_IMAGE_TYPES[file.content_type]
-    filename = random_filename(extension)
-    path = os.path.join(uploads_dir(), filename)
     contents = await file.read()
     if len(contents) > settings.max_upload_size_bytes:
         raise AppError(
@@ -46,6 +55,14 @@ async def save_image(file: UploadFile) -> str:
             f"Файл превышает максимальный размер {settings.MAX_UPLOAD_SIZE_MB} МБ.",
             413,
         )
+    if not has_valid_signature(contents, extension):
+        raise AppError(
+            "INVALID_IMAGE",
+            "Содержимое файла не соответствует заявленному формату изображения.",
+            400,
+        )
+    filename = random_filename(extension)
+    path = os.path.join(uploads_dir(), filename)
     with open(path, "wb") as f:
         f.write(contents)
     return f"/uploads/{filename}"

@@ -32,6 +32,17 @@ class TestImageUpload:
         assert response.status_code == 400
         assert response.json()["error"]["code"] == "INVALID_IMAGE"
 
+    def test_upload_rejects_fake_png_content(self, client, auth_headers):
+        """File renamed to .png but not actually a PNG -> magic-byte check must catch it."""
+        created = create_project(client, auth_headers)
+        response = client.post(
+            f"/api/v1/projects/{created['id']}/images",
+            files={"file": ("fake.png", io.BytesIO(b"<html>evil</html>"), "image/png")},
+            headers=auth_headers,
+        )
+        assert response.status_code == 400
+        assert response.json()["error"]["code"] == "INVALID_IMAGE"
+
     def test_upload_by_other_user_denied(self, client, auth_headers, second_user_headers):
         created = create_project(client, auth_headers)
         response = client.post(
