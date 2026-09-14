@@ -2,6 +2,7 @@ import os
 
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["JWT_SECRET"] = "test-secret-key-for-pytest-only-32b!"
+os.environ["ENV"] = "development"
 os.environ["UPLOAD_DIR"] = os.path.join(os.path.dirname(__file__), "test_uploads")
 
 import pytest
