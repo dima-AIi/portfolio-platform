@@ -1,5 +1,12 @@
 import uuid
 
+from app.core.security import SESSION_COOKIE_NAME
+from tests.conftest import _token_from_cookie
+
+
+def session_token(response) -> str:
+    return _token_from_cookie(response)
+
 
 class TestRegister:
     def test_register_success(self, client):
@@ -9,10 +16,55 @@ class TestRegister:
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["access_token"]
+        # The JWT must not be in the body — it travels in an httpOnly cookie.
+        assert "access_token" not in data
         assert data["user"]["email"] == "a@example.com"
         assert data["user"]["username"] == "usera"
         assert "password" not in data["user"]
+
+    def test_register_sets_httponly_session_cookie(self, client):
+        response = client.post(
+            "/api/v1/auth/register",
+            json={"email": "cookie@example.com", "username": "cookieuser", "password": "strongpass123"},
+        )
+        cookie_header = response.headers["set-cookie"]
+        assert SESSION_COOKIE_NAME in cookie_header
+        assert "HttpOnly" in cookie_header
+        assert "SameSite=lax" in cookie_header.replace("samesite", "SameSite")
+
+    def test_session_cookie_authenticates_requests(self, logged_in_client):
+        """The browser path: a cookie alone must be enough, no header needed."""
+        assert logged_in_client.get("/api/v1/auth/me").status_code == 200
+        assert logged_in_client.get("/api/v1/projects").status_code == 200
+
+    def test_bearer_header_still_works_for_api_clients(self, client, auth_headers):
+        assert client.get("/api/v1/auth/me", headers=auth_headers).status_code == 200
+
+    def test_bearer_header_overrides_the_session_cookie(self, client, auth_headers, second_user_headers):
+        """A browser sends its cookie automatically, so an explicit
+        Authorization header must still be able to act as another identity.
+
+        Note the client currently holds `other`'s cookie — it was the last
+        registration to touch the cookie jar.
+        """
+        assert client.get("/api/v1/auth/me").json()["username"] == "other"
+
+        response = client.get("/api/v1/auth/me", headers=auth_headers)
+        assert response.json()["username"] == "owner"
+
+    def test_logout_clears_session_cookie(self, logged_in_client):
+        assert logged_in_client.get("/api/v1/auth/me").status_code == 200
+        response = logged_in_client.post("/api/v1/auth/logout")
+        assert response.status_code == 204
+        assert SESSION_COOKIE_NAME in response.headers["set-cookie"]
+        assert logged_in_client.get("/api/v1/auth/me").status_code == 401
+
+    def test_no_credentials_rejected(self, client):
+        assert client.get("/api/v1/auth/me").status_code == 401
+
+    def test_tampered_cookie_rejected(self, logged_in_client):
+        logged_in_client.cookies.set(SESSION_COOKIE_NAME, "not.a.jwt")
+        assert logged_in_client.get("/api/v1/auth/me").status_code == 401
 
     def test_register_duplicate_email(self, client):
         payload = {"email": "dup@example.com", "username": "user1", "password": "strongpass123"}
@@ -68,7 +120,8 @@ class TestLogin:
             json={"email": "owner@example.com", "password": "strongpass123"},
         )
         assert response.status_code == 200
-        assert response.json()["access_token"]
+        assert "access_token" not in response.json()
+        assert bool(session_token(response))
 
     def test_login_wrong_password(self, client, auth_headers):
         response = client.post(

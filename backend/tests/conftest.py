@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.database import Base, SessionLocal, engine
+from app.core.security import SESSION_COOKIE_NAME
 from app.main import app
 from app.utils.seed import seed_technologies
 
@@ -39,12 +40,18 @@ def client():
 
 @pytest.fixture
 def auth_headers(client):
+    """Bearer headers for non-browser clients.
+
+    The browser path uses the httpOnly session cookie (see `logged_in_client`),
+    but the Authorization header stays supported so scripts and API clients
+    keep working.
+    """
     response = client.post(
         "/api/v1/auth/register",
         json={"email": "owner@example.com", "username": "owner", "password": "strongpass123"},
     )
     assert response.status_code == 201, response.text
-    token = response.json()["access_token"]
+    token = _token_from_cookie(response)
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -55,8 +62,28 @@ def second_user_headers(client):
         json={"email": "other@example.com", "username": "other", "password": "strongpass123"},
     )
     assert response.status_code == 201, response.text
-    token = response.json()["access_token"]
+    token = _token_from_cookie(response)
     return {"Authorization": f"Bearer {token}"}
+
+
+def _token_from_cookie(response) -> str:
+    """Read the JWT out of the Set-Cookie header for use as a Bearer token."""
+    header = response.headers.get("set-cookie", "")
+    for part in header.split(";"):
+        if part.strip().startswith(f"{SESSION_COOKIE_NAME}="):
+            return part.split("=", 1)[1]
+    raise AssertionError(f"session cookie not set: {header!r}")
+
+
+@pytest.fixture
+def logged_in_client(client):
+    """A TestClient with a live session cookie, mirroring a browser login."""
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "owner@example.com", "username": "owner", "password": "strongpass123"},
+    )
+    assert response.status_code == 201, response.text
+    return client
 
 
 def create_project(client, headers, title="Telegram CRM", **kwargs):

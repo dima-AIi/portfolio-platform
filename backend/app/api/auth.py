@@ -1,11 +1,16 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import decode_access_token
+from app.core.security import (
+    SESSION_COOKIE_NAME,
+    clear_session_cookie,
+    decode_access_token,
+    set_session_cookie,
+)
 from app.models import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
@@ -17,7 +22,7 @@ from app.schemas.auth import (
     ResetConfirm,
     ResetRequest,
     ResetRequestResponse,
-    TokenResponse,
+    SessionResponse,
     UserResponse,
 )
 from app.services.auth_service import AuthService
@@ -38,12 +43,22 @@ CREDENTIALS_ERROR = HTTPException(
 
 
 def get_current_user(
+    session_token: str | None = Cookie(default=None, alias=SESSION_COOKIE_NAME),
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    if credentials is None:
+    """Resolve the current user from the session cookie, falling back to a
+    Bearer header.
+
+    An explicit Authorization header wins over the cookie. A cookie is sent
+    automatically by the browser, so giving it priority would let a cookie
+    silently override the identity an API client asked for. The header is
+    always a deliberate choice by the caller.
+    """
+    token = (credentials.credentials if credentials else None) or session_token
+    if not token:
         raise CREDENTIALS_ERROR
-    user_id = decode_access_token(credentials.credentials)
+    user_id = decode_access_token(token)
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Недействительный или истёкший токен"
@@ -62,16 +77,35 @@ def get_current_user(
     return user
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201,
+@router.post("/register", response_model=SessionResponse, status_code=201,
              dependencies=[Depends(register_limit)])
-def register(data: RegisterRequest, service: AuthService = Depends()) -> TokenResponse:
-    return service.register(data)
+def register(
+    data: RegisterRequest, response: Response, service: AuthService = Depends()
+) -> SessionResponse:
+    return _start_session(service.register(data), response)
 
 
-@router.post("/login", response_model=TokenResponse,
+@router.post("/login", response_model=SessionResponse,
              dependencies=[Depends(login_limit)])
-def login(data: LoginRequest, service: AuthService = Depends()) -> TokenResponse:
-    return service.login(data)
+def login(
+    data: LoginRequest, response: Response, service: AuthService = Depends()
+) -> SessionResponse:
+    return _start_session(service.login(data), response)
+
+
+@router.post("/logout", status_code=204)
+def logout(response: Response) -> None:
+    """Drop the session cookie.
+
+    The token itself is stateless, so the server cannot revoke it before it
+    expires — the cookie is removed, which is what ends the browser session.
+    """
+    clear_session_cookie(response)
+
+
+def _start_session(result, response: Response) -> SessionResponse:
+    set_session_cookie(response, result.access_token)
+    return SessionResponse(user=result.user)
 
 
 @router.get("/me", response_model=UserResponse)
