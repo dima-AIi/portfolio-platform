@@ -40,6 +40,7 @@ export function PublicPortfolioPage() {
       : "Портфолио — Portfolio Platform",
     description: portfolio?.profile.bio ?? null,
     image: portfolio?.profile.avatar_url ?? null,
+    canonicalPath: username ? `/${username}` : null,
   });
 
   if (loading) {

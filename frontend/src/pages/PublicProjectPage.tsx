@@ -30,8 +30,10 @@ export function PublicProjectPage() {
 
   useSeo({
     title: data ? `${data.project.title} — ${data.username}` : "Проект — Portfolio Platform",
-    description: data?.project.short_description ?? null,
+    description: data?.project.short_description ?? data?.project.result ?? null,
     image: data?.project.cover_image_url ?? null,
+    type: "article",
+    canonicalPath: username && slug ? `/${username}/projects/${slug}` : null,
   });
 
   if (loading) {

@@ -4,7 +4,17 @@ interface SeoOptions {
   title: string;
   description?: string | null;
   image?: string | null;
+  /** "website" for portfolios/landing, "article" for a single project case. */
+  type?: "website" | "article";
+  canonicalPath?: string | null;
 }
+
+const SITE_NAME = "Portfolio Platform";
+// Used when a page has nothing specific to say. A generic description still
+// ranks better than an empty <meta name="description">, and it replaces the
+// previous page's text instead of leaking it onto this one.
+const DEFAULT_DESCRIPTION =
+  "Портфолио специалиста с реальными проектами: проблема, решение, результат и технологии.";
 
 function setMeta(attr: "name" | "property", key: string, content: string) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
@@ -16,18 +26,55 @@ function setMeta(attr: "name" | "property", key: string, content: string) {
   el.setAttribute("content", content);
 }
 
-export function useSeo({ title, description, image }: SeoOptions) {
+function setCanonical(href: string | null) {
+  let el = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (!href) {
+    el?.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement("link");
+    el.rel = "canonical";
+    document.head.appendChild(el);
+  }
+  el.href = href;
+}
+
+export function useSeo({ title, description, image, type = "website", canonicalPath }: SeoOptions) {
   useEffect(() => {
     document.title = title;
+    const canonical = canonicalPath ?? window.location.pathname;
+    const url = new URL(window.location.origin + canonical).href;
+    const absoluteImage = image ? new URL(image, window.location.origin).href : null;
+
+    setCanonical(url);
     setMeta("property", "og:title", title);
-    setMeta("property", "og:type", "website");
-    setMeta("property", "og:url", window.location.href);
-    if (description) {
-      setMeta("name", "description", description);
-      setMeta("property", "og:description", description);
+    setMeta("property", "og:type", type);
+    setMeta("property", "og:url", url);
+    setMeta("property", "og:site_name", SITE_NAME);
+    setMeta("property", "og:locale", "ru_RU");
+    setMeta("name", "twitter:card", absoluteImage ? "summary_large_image" : "summary");
+    setMeta("name", "twitter:title", title);
+
+    // Descriptions are always set: to the page's own text, or to a generic
+    // fallback. Never left empty and never left holding the previous page's
+    // value, which would be a stale description for a different URL.
+    const metaDescription = description || DEFAULT_DESCRIPTION;
+    setMeta("name", "description", metaDescription);
+    setMeta("property", "og:description", metaDescription);
+    setMeta("name", "twitter:description", metaDescription);
+
+    // A wrong image is worse than no image, so og:image is dropped instead of
+    // being carried over from the previously visited page.
+    if (absoluteImage) {
+      setMeta("property", "og:image", absoluteImage);
+      setMeta("name", "twitter:image", absoluteImage);
+    } else {
+      for (const el of document.head.querySelectorAll(
+        'meta[property="og:image"], meta[name="twitter:image"]',
+      )) {
+        el.remove();
+      }
     }
-    if (image) {
-      setMeta("property", "og:image", new URL(image, window.location.origin).href);
-    }
-  }, [title, description, image]);
+  }, [title, description, image, type, canonicalPath]);
 }

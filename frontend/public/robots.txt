@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# Authenticated app areas and the API surface hold no public content.
+Disallow: /dashboard
+Disallow: /api/
