@@ -51,7 +51,9 @@ def get_current_user(
     try:
         user_uuid = uuid.UUID(user_id)
     except ValueError:
-        raise CREDENTIALS_ERROR
+        # The token was signed by us but carries a non-UUID subject — treat it
+        # as missing credentials rather than leaking the parse error.
+        raise CREDENTIALS_ERROR from None
     user = UserRepository(db).get_by_id(user_uuid)
     if not user or not user.is_active:
         raise HTTPException(
