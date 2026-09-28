@@ -27,6 +27,7 @@ node_modules/
 dist/
 build/
 *.local
+*.tsbuildinfo
 
 # Editors / OS
 .idea/
