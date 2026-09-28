@@ -1,7 +1,10 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+
+ProjectStatus = Literal["DRAFT", "PUBLISHED"]
 
 
 class ProjectTechnologySchema(BaseModel):
@@ -56,7 +59,7 @@ class ProjectResponse(BaseModel):
     cover_image_url: str | None
     github_url: str | None
     live_url: str | None
-    status: str
+    status: ProjectStatus
     sort_order: int
     view_count: int = 0
     created_at: datetime
