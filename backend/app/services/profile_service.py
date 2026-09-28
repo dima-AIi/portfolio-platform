@@ -4,9 +4,9 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import Profile
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.profile import AvatarResponse, ProfileResponse, ProfileUpdate
+from app.utils.images import delete_image_file
 
 
 class ProfileService:
@@ -27,6 +27,11 @@ class ProfileService:
 
     def set_avatar(self, user_id: uuid.UUID, avatar_url: str) -> AvatarResponse:
         profile = self.repo.get_by_user_id(user_id)
+        previous_url = profile.avatar_url
         profile.avatar_url = avatar_url
         self.repo.save(profile)
+        # The replaced file is no longer referenced anywhere — remove it so the
+        # uploads directory does not grow without bound.
+        if previous_url and previous_url != avatar_url:
+            delete_image_file(previous_url)
         return AvatarResponse(avatar_url=avatar_url)

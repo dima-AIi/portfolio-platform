@@ -1,5 +1,4 @@
 import secrets
-import uuid
 from datetime import timedelta
 
 from fastapi import Depends
@@ -20,6 +19,7 @@ from app.schemas.auth import (
 )
 from app.services.email_service import send_password_reset_email
 from app.utils.errors import AppError
+from app.utils.images import delete_image_file
 
 ALREADY_EXISTS_STATUS = 409
 GENERIC_RESET_DETAIL = "Если аккаунт с таким email существует, код подтверждения отправлен."
@@ -67,7 +67,18 @@ class AuthService:
     def delete_account(self, user: User, password: str) -> None:
         if not verify_password(password, user.password_hash):
             raise AppError("INVALID_CREDENTIALS", "Текущий пароль указан неверно.", 400)
+        # Collect upload paths before the delete: the DB cascade removes the
+        # rows, but the files on disk would be left behind forever.
+        urls: list[str] = []
+        if user.profile and user.profile.avatar_url:
+            urls.append(user.profile.avatar_url)
+        for project in user.projects:
+            urls.extend(image.url for image in project.images)
+            if project.cover_image_url:
+                urls.append(project.cover_image_url)
         self.repo.delete(user)
+        for url in dict.fromkeys(urls):
+            delete_image_file(url)
 
     def request_password_reset(self, email: str) -> ResetRequestResponse:
         user = self.repo.get_by_email(email)
@@ -83,12 +94,12 @@ class AuthService:
         if settings.smtp_enabled:
             try:
                 send_password_reset_email(user.email, code)
-            except Exception:
+            except Exception as exc:
                 raise AppError(
                     "EMAIL_SEND_FAILED",
                     "Не удалось отправить письмо. Попробуйте позже.",
                     502,
-                )
+                ) from exc
             return ResetRequestResponse(detail=GENERIC_RESET_DETAIL)
 
         if settings.ENV != "development":

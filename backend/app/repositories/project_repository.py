@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Project, ProjectImage, STATUS_DRAFT, STATUS_PUBLISHED, Technology
+from app.models import STATUS_PUBLISHED, Project, ProjectImage, Technology
 
 
 class ProjectRepository:
@@ -125,4 +125,20 @@ class ProjectRepository:
 
     def delete_image(self, image: ProjectImage) -> None:
         self.db.delete(image)
+        self.db.flush()
+        self.renumber_images(image.project_id)
         self.db.commit()
+
+    def renumber_images(self, project_id: uuid.UUID) -> None:
+        """Make image sort_order a dense 0..n-1 sequence.
+
+        Without this, deleting the first image leaves a gap and the next upload
+        would reuse an order value that is already taken.
+        """
+        images = self.db.scalars(
+            select(ProjectImage)
+            .where(ProjectImage.project_id == project_id)
+            .order_by(ProjectImage.sort_order, ProjectImage.id)
+        ).all()
+        for index, item in enumerate(images):
+            item.sort_order = index

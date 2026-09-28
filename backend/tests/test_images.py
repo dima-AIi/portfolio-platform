@@ -106,3 +106,94 @@ class TestAvatar:
             headers=auth_headers,
         )
         assert response.status_code == 400
+
+    def test_replacing_avatar_removes_previous_file(self, client, auth_headers):
+        """The old avatar file is no longer referenced — it must not stay on disk."""
+        import os
+
+        from app.utils.images import uploads_dir
+
+        first = client.post(
+            "/api/v1/profile/avatar", files=png_file(), headers=auth_headers
+        ).json()["avatar_url"]
+        first_path = os.path.join(uploads_dir(), os.path.basename(first))
+        assert os.path.isfile(first_path)
+
+        second = client.post(
+            "/api/v1/profile/avatar", files=png_file(), headers=auth_headers
+        ).json()["avatar_url"]
+
+        assert second != first
+        assert not os.path.isfile(first_path), "previous avatar file was not removed"
+        assert os.path.isfile(os.path.join(uploads_dir(), os.path.basename(second)))
+
+
+class TestImageCleanup:
+    def test_deleting_project_removes_image_files(self, client, auth_headers):
+        import os
+
+        from app.utils.images import uploads_dir
+
+        created = create_project(client, auth_headers)
+        image = client.post(
+            f"/api/v1/projects/{created['id']}/images", files=png_file(), headers=auth_headers
+        ).json()
+        path = os.path.join(uploads_dir(), os.path.basename(image["url"]))
+        assert os.path.isfile(path)
+
+        assert (
+            client.delete(f"/api/v1/projects/{created['id']}", headers=auth_headers).status_code
+            == 204
+        )
+        assert not os.path.isfile(path), "image file outlived the deleted project"
+
+    def test_deleting_account_removes_uploaded_files(self, client, auth_headers):
+        import os
+
+        from app.utils.images import uploads_dir
+
+        created = create_project(client, auth_headers)
+        image = client.post(
+            f"/api/v1/projects/{created['id']}/images", files=png_file(), headers=auth_headers
+        ).json()
+        avatar = client.post(
+            "/api/v1/profile/avatar", files=png_file(), headers=auth_headers
+        ).json()["avatar_url"]
+
+        paths = [
+            os.path.join(uploads_dir(), os.path.basename(url)) for url in (image["url"], avatar)
+        ]
+        assert all(os.path.isfile(p) for p in paths)
+
+        response = client.request(
+            "DELETE", "/api/v1/auth/account", headers=auth_headers, json={"password": "strongpass123"}
+        )
+        assert response.status_code == 204, response.text
+        assert not any(os.path.isfile(p) for p in paths), "files left after account deletion"
+
+    def test_image_order_stays_dense_after_delete(self, client, auth_headers):
+        """sort_order must be renumbered so a new upload cannot collide."""
+        created = create_project(client, auth_headers)
+        images = [
+            client.post(
+                f"/api/v1/projects/{created['id']}/images", files=png_file(), headers=auth_headers
+            ).json()
+            for _ in range(3)
+        ]
+
+        # Delete the first one — the gap would otherwise stay at sort_order 0.
+        client.delete(
+            f"/api/v1/projects/{created['id']}/images/{images[0]['id']}", headers=auth_headers
+        )
+
+        project = client.get(f"/api/v1/projects/{created['id']}", headers=auth_headers).json()
+        orders = sorted(image["sort_order"] for image in project["images"])
+        assert orders == [0, 1], f"expected a dense 0..n-1 sequence, got {orders}"
+
+        new_image = client.post(
+            f"/api/v1/projects/{created['id']}/images", files=png_file(), headers=auth_headers
+        ).json()
+        project = client.get(f"/api/v1/projects/{created['id']}", headers=auth_headers).json()
+        orders = sorted(image["sort_order"] for image in project["images"])
+        assert orders == [0, 1, 2], f"sort_order collision after re-upload: {orders}"
+        assert new_image["sort_order"] == 2

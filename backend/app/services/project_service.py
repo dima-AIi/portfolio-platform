@@ -3,8 +3,8 @@ import uuid
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
-from app.models import STATUS_PUBLISHED, Project
+from app.core.database import get_db, utcnow
+from app.models import STATUS_DRAFT, STATUS_PUBLISHED, Project
 from app.repositories.project_repository import ProjectRepository
 from app.schemas.project import (
     ProjectCreate,
@@ -13,6 +13,7 @@ from app.schemas.project import (
     ProjectUpdate,
 )
 from app.utils.errors import AppError
+from app.utils.images import delete_image_file
 from app.utils.slug import slugify, unique_slug
 
 
@@ -68,11 +69,17 @@ class ProjectService:
         return ProjectResponse.model_validate(project)
 
     def delete_project(self, user_id: uuid.UUID, project_id: uuid.UUID) -> None:
-        self.repo.delete(self._get_owned(user_id, project_id))
+        project = self._get_owned(user_id, project_id)
+        # Collect file URLs before the delete: after commit the ORM object is
+        # expired and its relationships can no longer be read.
+        urls = [image.url for image in project.images]
+        if project.cover_image_url and project.cover_image_url not in urls:
+            urls.append(project.cover_image_url)
+        self.repo.delete(project)
+        for url in urls:
+            delete_image_file(url)
 
     def publish_project(self, user_id: uuid.UUID, project_id: uuid.UUID) -> ProjectResponse:
-        from app.core.database import utcnow
-
         project = self._get_owned(user_id, project_id)
         if project.status != STATUS_PUBLISHED:
             project.status = STATUS_PUBLISHED
@@ -82,7 +89,7 @@ class ProjectService:
 
     def unpublish_project(self, user_id: uuid.UUID, project_id: uuid.UUID) -> ProjectResponse:
         project = self._get_owned(user_id, project_id)
-        project.status = "DRAFT"
+        project.status = STATUS_DRAFT
         self.repo.save(project)
         return ProjectResponse.model_validate(project)
 
