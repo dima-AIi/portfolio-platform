@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
 import { CopyLinkButton } from "../components/ui/CopyLinkButton";
+import { OnboardingChecklist } from "../components/dashboard/OnboardingChecklist";
 import { profileApi } from "../services/profile";
 import { projectsApi } from "../services/projects";
 import type { Profile, Project } from "../types";
@@ -50,6 +51,8 @@ export function DashboardPage() {
         Здравствуйте{data.profile.display_name ? `, ${data.profile.display_name}` : ""}!
       </h1>
       <p className="page-subtitle">Текущее состояние вашего портфолио.</p>
+
+      <OnboardingChecklist profile={data.profile} projects={data.projects} />
 
       <div className="stat-grid">
         <div className="card card-pad stat-card">

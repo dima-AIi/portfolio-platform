@@ -1,4 +1,5 @@
 import type { Project } from "../../types";
+import { CaseText } from "./CaseText";
 
 interface ProjectPreviewProps {
   project: Project;
@@ -23,16 +24,18 @@ export function ProjectPreview({ project }: ProjectPreviewProps) {
             ))}
           </div>
 
+          {/* Rendered through the same CaseText the public page uses, so the
+              preview shows the real paragraph and list layout. */}
           {project.problem && (
             <section className="preview-section">
               <h4>Проблема</h4>
-              <p>{project.problem}</p>
+              <CaseText text={project.problem} />
             </section>
           )}
           {project.solution && (
             <section className="preview-section">
               <h4>Решение</h4>
-              <p>{project.solution}</p>
+              <CaseText text={project.solution} />
             </section>
           )}
           {project.role && (
@@ -44,17 +47,13 @@ export function ProjectPreview({ project }: ProjectPreviewProps) {
           {project.features && (
             <section className="preview-section">
               <h4>Функции</h4>
-              <ul>
-                {project.features.split("\n").map((line, i) =>
-                  line.trim() ? <li key={i}>{line.trim()}</li> : null,
-                )}
-              </ul>
+              <CaseText text={project.features} />
             </section>
           )}
           {project.result && (
             <section className="preview-section">
               <h4>Результат</h4>
-              <p>{project.result}</p>
+              <CaseText text={project.result} />
             </section>
           )}
 

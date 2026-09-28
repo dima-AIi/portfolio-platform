@@ -337,6 +337,93 @@
   flex-wrap: wrap;
 }
 
+/* ============ Onboarding checklist ============ */
+.onboarding {
+  margin-bottom: var(--space-6);
+  border-left: 3px solid var(--color-primary);
+}
+
+.onboarding-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.onboarding-head h2 {
+  margin: 0 0 4px;
+  font-size: var(--text-lg);
+}
+
+.onboarding-count {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.onboarding-bar {
+  height: 6px;
+  margin: var(--space-4) 0;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.onboarding-bar span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.onboarding-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.onboarding-steps li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.onboarding-steps li.done {
+  background: var(--color-surface);
+  border-color: transparent;
+}
+
+.onboarding-steps li.done .onboarding-step-main strong {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.onboarding-check {
+  flex-shrink: 0;
+  width: 22px;
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  text-align: center;
+}
+
+.onboarding-step-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -1639,6 +1726,11 @@
 @media (max-width: 640px) {
   .stat-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  /* Let the call to action drop onto its own line instead of squeezing. */
+  .onboarding-steps li .btn {
+    width: 100%;
   }
 
   .pf-projects-grid {
