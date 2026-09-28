@@ -453,6 +453,26 @@
   margin-top: var(--space-2);
 }
 
+/* A stat that doubles as a link: the whole card is the hit target. */
+.stat-link-card {
+  color: inherit;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.stat-link-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.stat-link-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .dashboard-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -465,6 +485,104 @@
 
 .muted {
   color: var(--color-text-muted);
+}
+
+/* ============ Dashboard sections (projects, tips) ============ */
+.dash-section {
+  margin-bottom: var(--space-8);
+}
+
+.dash-section-title {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-4);
+}
+
+.dash-projects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.dash-project {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.dash-project-cover {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface-2);
+}
+
+.dash-project-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dash-project-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 4px;
+}
+
+.dash-project-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.dash-project-main strong {
+  overflow-wrap: anywhere;
+}
+
+.dash-project-link {
+  font-size: var(--text-xs);
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.dash-section-foot {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.dash-tips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.dash-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  border-left: 3px solid var(--color-border-strong);
+}
+
+.dash-tip p {
+  font-size: var(--text-sm);
+  flex: 1;
+}
+
+.dash-tip-accent {
+  border-left-color: var(--color-primary);
 }
 
 /* ============ Project list ============ */
@@ -1529,7 +1647,11 @@
 }
 
 .pf-theme-dark .pf-case-section p,
-.pf-theme-dark .pf-case-section ul {
+.pf-theme-dark .pf-case-section ul,
+/* CaseText renders list items, and they carry their own colour from the
+   light-theme .case-text-block li rule — without this they stay dark grey
+   on a dark background and effectively disappear. */
+.pf-theme-dark .case-text-block li {
   color: #e2e8f0;
 }
 
@@ -1738,6 +1860,20 @@
 
   .dashboard-actions {
     grid-template-columns: 1fr;
+  }
+
+  .dash-projects,
+  .dash-tips {
+    grid-template-columns: 1fr;
+  }
+
+  /* Keep the project row from squeezing the cover and the actions together. */
+  .dash-project {
+    flex-wrap: wrap;
+  }
+
+  .dash-section-foot .btn {
+    flex: 1;
   }
 
   .project-row {
