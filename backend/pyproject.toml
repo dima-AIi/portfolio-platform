@@ -1,0 +1,16 @@
+# Ruff - fast linter for the backend.
+# Kept intentionally small: errors and a few high-signal rule sets only.
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+# Alembic versions and one-off scripts are not part of the app surface.
+extend-exclude = [".venv", "alembic", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+# B008: FastAPI Depends()/Query() in defaults is the framework's own pattern.
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests create fixtures purely for their side effects.
+"tests/*" = ["F841"]
