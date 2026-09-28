@@ -32,6 +32,33 @@ def test_browser_family_is_coarse():
     assert browser_family(None) is None
 
 
+def test_public_page_still_counts_when_analytics_is_disabled(client, auth_headers, monkeypatch):
+    """Analytics must never be able to break the public page.
+
+    A failing page_view insert is swallowed, the page still renders, and the
+    view_count the request had already committed survives.
+    """
+    from sqlalchemy.exc import OperationalError
+
+    from app.repositories import page_view_repository
+
+    def boom(*_args, **_kwargs):
+        raise OperationalError("INSERT", {}, Exception("page_views unavailable"))
+
+    monkeypatch.setattr(
+        page_view_repository.PageViewRepository, "record", staticmethod(boom)
+    )
+
+    first = client.get("/api/v1/public/owner", headers={"Referer": "https://t.me/durov"})
+    assert first.status_code == 200, first.text
+    assert first.json()["username"] == "owner"
+
+    # The counter is independent of the analytics insert and must still move.
+    second = client.get("/api/v1/public/owner")
+    assert second.status_code == 200, second.text
+    assert second.json()["profile"]["view_count"] == 2
+
+
 def test_analytics_records_a_view_with_referrer(client, auth_headers):
     client.post("/api/v1/auth/login", json={"email": "owner@example.com", "password": "strongpass123"})
     project = client.post(
