@@ -97,6 +97,30 @@ SITEMAP      GET /public/sitemap.xml
 `GET /public/{username}` accepts optional `?page=&limit=` (max 50). `skills`
 always covers the whole portfolio, not just the current page.
 
+## Showcase portfolio
+
+The landing page links to a filled demo account so a visitor can see a real page
+before registering. The ELORA case study documents an actual deployed project
+(an online booking service for a beauty studio) in the
+Problem → Solution → Result → Stack shape.
+
+```bash
+# Backend must be running on :8000
+cd backend
+python scripts/seed_showcase.py
+```
+
+This creates `@demo` with the profile, the published project, its technologies
+and screenshots pulled from the live site, then publishes it:
+
+| | |
+|---|---|
+| Public page | http://localhost:5173/demo |
+| Login | `demo@portfolio-platform.dev` / `showcase-2026` |
+
+The script is idempotent — re-running it updates the existing project instead of
+creating duplicates, and it skips image upload once the project has images.
+
 ## Testing
 
 ```bash

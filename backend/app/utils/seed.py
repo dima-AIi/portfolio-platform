@@ -1,14 +1,17 @@
 from sqlalchemy.orm import Session
 
 from app.models import Technology
+from app.utils.slug import slugify
 
 DEFAULT_TECHNOLOGIES = [
     ("Python", "backend"),
     ("JavaScript", "frontend"),
     ("TypeScript", "frontend"),
+    ("C#", "backend"),
     ("FastAPI", "backend"),
     ("Django", "backend"),
     ("Flask", "backend"),
+    ("ASP.NET Core", "backend"),
     ("React", "frontend"),
     ("Vue.js", "frontend"),
     ("Next.js", "frontend"),
@@ -27,15 +30,14 @@ DEFAULT_TECHNOLOGIES = [
     ("SQLAlchemy", "backend"),
     ("Telegram Bot API", "other"),
     ("OpenAI API", "other"),
+    ("PWA", "other"),
+    ("SEO", "other"),
     ("Figma", "design"),
 ]
-
 
 def seed_technologies(db: Session) -> None:
     """Idempotently insert default technologies on startup."""
     existing = {name for (name,) in db.execute(Technology.__table__.select().with_only_columns(Technology.name)).all()}
-    from app.utils.slug import slugify
-
     for name, category in DEFAULT_TECHNOLOGIES:
         if name not in existing:
             db.add(Technology(name=name, slug=slugify(name), category=category))
