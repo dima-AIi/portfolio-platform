@@ -10,6 +10,7 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+from typing import NamedTuple
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000") + "/api/v1"
 RUN = str(int(time.time()))[-6:]
@@ -36,7 +37,25 @@ def check(name: str, ok: bool, detail: str = "") -> None:
         print(f"  FAIL  {name}  {detail}")
 
 
+class Response(NamedTuple):
+    """Result of one API call.
+
+    Tuple-compatible on purpose: the existing `s, d = call(...)` call sites keep
+    working unchanged, while login/register additionally read `.set_cookie` to
+    recover the session JWT.
+    """
+
+    status: int
+    data: object
+    set_cookie: str = ""
+
+
 def call(method: str, path: str, body=None, token=None, raw_body=None, content_type=None):
+    """Perform a request.
+
+    The session JWT now arrives in an httpOnly cookie, so a non-browser client
+    has to lift it out of Set-Cookie and replay it as a Bearer header.
+    """
     data = raw_body if raw_body is not None else (json.dumps(body).encode() if body is not None else None)
     req = urllib.request.Request(
         f"{BASE}{path}",
@@ -50,16 +69,27 @@ def call(method: str, path: str, body=None, token=None, raw_body=None, content_t
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             payload = resp.read()
+            cookie = resp.headers.get("set-cookie", "")
             try:
-                return resp.status, json.loads(payload) if payload else None
+                return resp.status, json.loads(payload) if payload else None, cookie
             except json.JSONDecodeError:
-                return resp.status, payload
+                return resp.status, payload, cookie
     except urllib.error.HTTPError as e:
         payload = e.read()
+        cookie = e.headers.get("set-coookie", "")
         try:
-            return e.code, json.loads(payload) if payload else None
+            return e.code, json.loads(payload) if payload else None, cookie
         except json.JSONDecodeError:
-            return e.code, payload
+            return e.code, payload, cookie
+
+
+def session_token(result) -> str:
+    """Extract the JWT from the session cookie of a login/register response."""
+    set_cookie = result.set_cookie if isinstance(result, Response) else ""
+    for part in set_cookie.split(";"):
+        if part.strip().startswith("portfolio_session="):
+            return part.split("=", 1)[1]
+    return ""
 
 
 def unified_error(status_code, data) -> bool:
@@ -76,9 +106,9 @@ def multipart(filename: str, content: bytes, mime: str):
 
 
 print("== 1. REGISTER page ==")
-s, d = call("POST", "/auth/register", {"email": EMAIL, "username": USER, "password": PASSWORD})
-check("valid register -> 201 + token", s == 201 and d.get("access_token"), str(s))
-token = d["access_token"]
+s, d, cookie = call("POST", "/auth/register", {"email": EMAIL, "username": USER, "password": PASSWORD})
+token = session_token(cookie)
+check("valid register -> 201 + session cookie", s == 201 and bool(token) and "access_token" not in (d or {}), str(s))
 s, d = call("POST", "/auth/register", {"email": EMAIL, "username": "x" + USER, "password": PASSWORD})
 check("duplicate email -> 409 EMAIL_ALREADY_EXISTS", s == 409 and d["error"]["code"] == "EMAIL_ALREADY_EXISTS")
 s, d = call("POST", "/auth/register", {"email": "other" + EMAIL, "username": USER, "password": PASSWORD})
@@ -93,8 +123,8 @@ s, d = call("POST", "/auth/register", {"email": "not-an-email", "username": "okn
 check("invalid email rejected (422 or 429 by rate limit)", s in (422, 429), str(s))
 
 print("== 2. LOGIN page ==")
-s, d = call("POST", "/auth/login", {"email": EMAIL.upper(), "password": PASSWORD})
-check("login ok (case-insensitive email)", s == 200 and d.get("access_token"))
+s, d, cookie = call("POST", "/auth/login", {"email": EMAIL.upper(), "password": PASSWORD})
+check("login ok (case-insensitive email)", s == 200 and bool(session_token(cookie)))
 s, d = call("POST", "/auth/login", {"email": EMAIL, "password": "wrong-password"})
 check("wrong password -> 401 INVALID_CREDENTIALS", s == 401 and d["error"]["code"] == "INVALID_CREDENTIALS")
 s, d = call("POST", "/auth/login", {"email": "nobody@nowhere.io", "password": "whatever123"})
@@ -232,9 +262,9 @@ s, d = call("PUT", "/auth/password", {"current_password": "wrong", "new_password
 check("password change wrong current -> 400", s == 400)
 s, d = call("PUT", "/auth/password", {"current_password": PASSWORD, "new_password": "newpass-123"}, token=token)
 check("password change -> 204", s == 204)
-s, d = call("POST", "/auth/login", {"email": EMAIL, "password": "newpass-123"})
+s, d, cookie = call("POST", "/auth/login", {"email": EMAIL, "password": "newpass-123"})
 check("login with new password", s == 200)
-token = d["access_token"]
+token = session_token(cookie)
 s, d = call("PUT", "/auth/email", {"email": f"new{EMAIL}", "password": "wrong"}, token=token)
 check("email change wrong password -> 400", s == 400)
 s, d = call("PUT", "/auth/email", {"email": f"new{EMAIL}", "password": "newpass-123"}, token=token)

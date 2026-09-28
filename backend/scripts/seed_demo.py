@@ -8,8 +8,10 @@ import io
 import json
 import struct
 import sys
+import urllib.error
 import urllib.request
 import zlib
+from typing import NamedTuple
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000") + "/api/v1"
 
@@ -43,7 +45,18 @@ def png_bytes(width: int, height: int, top_rgb, bottom_rgb) -> bytes:
     )
 
 
+class Response(NamedTuple):
+    status: int
+    data: object
+    set_cookie: str = ""
+
+
 def call(method: str, path: str, token: str | None = None, body: dict | None = None):
+    """Perform a request.
+
+    The session JWT now arrives in an httpOnly cookie. This script is not a
+    browser, so it replays the cookie value as an Authorization header.
+    """
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(
         f"{BASE}{path}",
@@ -57,10 +70,19 @@ def call(method: str, path: str, token: str | None = None, body: dict | None = N
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             payload = resp.read()
-            return resp.status, json.loads(payload) if payload else None
+            cookie = resp.headers.get("set-cookie", "")
+            return Response(resp.status, json.loads(payload) if payload else None, cookie)
     except urllib.error.HTTPError as e:
         payload = e.read()
-        return e.code, json.loads(payload) if payload else None
+        cookie = e.headers.get("set-cookie", "")
+        return Response(e.code, json.loads(payload) if payload else None, cookie)
+
+
+def session_token(result) -> str:
+    for part in result.set_cookie.split(";"):
+        if part.strip().startswith("portfolio_session="):
+            return part.split("=", 1)[1]
+    return ""
 
 
 def upload(path: str, token: str, filename: str, content: bytes):
@@ -140,15 +162,18 @@ PROJECTS = [
 def main() -> int:
     print("== Seed demo user ==")
 
-    status, data = call("POST", "/auth/register", body={
+    result = call("POST", "/auth/register", body={
         "email": "demo@example.com", "username": "demo", "password": "demo12345"})
-    if status == 409:
-        status, data = call("POST", "/auth/login", body={
+    if result.status == 409:
+        result = call("POST", "/auth/login", body={
             "email": "demo@example.com", "password": "demo12345"})
-    if status not in (200, 201):
-        print(f"FAIL auth: {status} {data}")
+    if result.status not in (200, 201):
+        print(f"FAIL auth: {result.status} {result.data}")
         return 1
-    token = data["access_token"]
+    token = session_token(result)
+    if not token:
+        print("FAIL auth: no session cookie in response")
+        return 1
     print("auth OK")
 
     status, _ = call("PUT", "/profile", token, {
