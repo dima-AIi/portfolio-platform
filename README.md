@@ -93,14 +93,19 @@ PUBLIC       GET /public/{username}, GET /public/{username}/projects/{slug}
 ## Testing
 
 ```bash
-# Backend
+# Backend — 123 tests (lint first, since CI runs it too)
 cd backend
+ruff check .
 pytest
 
-# Frontend
+# Frontend — 26 tests
 cd frontend
+npm run lint
+npm run typecheck
 npm test
 ```
+
+Both suites run in CI on every push and pull request (`.github/workflows/ci.yml`).
 
 ## Deployment (free tier)
 
