@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import STATUS_PUBLISHED, Project, ProjectImage, Technology
+from app.models import STATUS_PUBLISHED, Project, ProjectImage, Technology, User
 
 
 class ProjectRepository:
@@ -41,13 +41,55 @@ class ProjectRepository:
             stmt = stmt.offset(offset)
         return list(self.db.scalars(stmt).all())
 
-    def list_published_by_user(self, user_id: uuid.UUID) -> list[Project]:
+    def list_published_by_user(
+        self,
+        user_id: uuid.UUID,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[Project]:
         stmt = (
             self._query()
             .where(Project.user_id == user_id, Project.status == STATUS_PUBLISHED)
             .order_by(Project.sort_order, Project.published_at.desc())
         )
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        if offset is not None:
+            stmt = stmt.offset(offset)
         return list(self.db.scalars(stmt).all())
+
+    def list_public_usernames(self) -> list[str]:
+        """Usernames with at least one published project, for the sitemap.
+
+        Portfolios with nothing published are intentionally excluded: they would
+        be thin, empty pages and search engines should not be pointed at them.
+        """
+        stmt = (
+            select(User.username)
+            .join(Project, Project.user_id == User.id)
+            .where(Project.status == STATUS_PUBLISHED, User.is_active.is_(True))
+            .group_by(User.username)
+            .order_by(User.username)
+        )
+        return list(self.db.scalars(stmt).all())
+
+    def list_published_slugs(self, user_id: uuid.UUID) -> list[str]:
+        stmt = (
+            select(Project.slug)
+            .where(Project.user_id == user_id, Project.status == STATUS_PUBLISHED)
+            .order_by(Project.sort_order, Project.published_at.desc())
+        )
+        return list(self.db.scalars(stmt).all())
+
+    def count_published_by_user(self, user_id: uuid.UUID) -> int:
+        return (
+            self.db.scalar(
+                select(func.count())
+                .select_from(Project)
+                .where(Project.user_id == user_id, Project.status == STATUS_PUBLISHED)
+            )
+            or 0
+        )
 
     def count_by_user(self, user_id: uuid.UUID) -> int:
         return self.db.scalar(

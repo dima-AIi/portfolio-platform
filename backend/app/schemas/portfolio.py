@@ -12,6 +12,11 @@ class PublicPortfolioResponse(BaseModel):
     profile: ProfileResponse
     projects: list[ProjectResponse]
     skills: list[str] = []
+    # Pagination metadata. `total` counts every published project, so a client
+    # can tell whether a "load more" control is needed.
+    total: int = 0
+    page: int | None = None
+    limit: int | None = None
 
 
 class PublicProjectResponse(BaseModel):
