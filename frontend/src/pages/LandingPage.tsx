@@ -3,12 +3,35 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useSeo } from "../hooks/useSeo";
 
+/** Screenshots of the showcase portfolio, served from /demo/elora. */
+const SHOWCASE_SHOTS = [
+  { src: "/demo/elora/og-cover.jpg", alt: "Обложка кейса ELORA" },
+  { src: "/demo/elora/hero.jpg", alt: "Главная страница ELORA" },
+  { src: "/demo/elora/manicure-01.jpg", alt: "Галерея работ ELORA" },
+];
+
+const STEPS = [
+  {
+    title: "Заведите аккаунт",
+    text: "Логин по email — и вы сразу в личном кабинете. Никаких лишних полей.",
+  },
+  {
+    title: "Соберите кейсы",
+    text: "Проект = проблема, решение, результат и стек. Так это читают клиент и рекрутер.",
+  },
+  {
+    title: "Поделитесь ссылкой",
+    text: "Публичный адрес /ваше_имя. Отправляйте его вместо папки с файлами.",
+  },
+];
+
 export function LandingPage() {
   const { user } = useAuth();
   useSeo({
     title: "Portfolio Platform — покажите реальные работы",
     description:
       "Создайте профессиональное портфолио с реальными проектами: Проблема, Решение, Результат, Технологии. Одна ссылка для работодателей и клиентов.",
+    canonicalPath: "/",
   });
 
   return (
@@ -19,6 +42,9 @@ export function LandingPage() {
             PP
           </Link>
           <nav className="landing-nav">
+            <a href="#showcase" className="btn btn-ghost btn-sm">
+              Пример портфолио
+            </a>
             {user ? (
               <Link to="/dashboard" className="btn btn-primary btn-sm">
                 В личный кабинет
@@ -54,42 +80,88 @@ export function LandingPage() {
             </Link>
             <span className="landing-cta-note">Без карты. Готово за несколько минут.</span>
           </div>
+        </div>
+      </section>
 
-          <div className="landing-demo card">
-            <div className="landing-demo-header">
-              <span className="landing-demo-dot" />
-              <span className="landing-demo-dot" />
-              <span className="landing-demo-dot" />
-              <span className="landing-demo-url">/dmitriy</span>
+      <section className="landing-showcase" id="showcase">
+        <div className="container">
+          <p className="landing-eyebrow">Живое портфолио</p>
+          <h2 className="landing-showcase-title">
+            Вот как это выглядит на настоящем проекте
+          </h2>
+          <p className="landing-showcase-lead">
+            Ниже — реальное портфолио на этой платформе. Кейс собран по формуле
+            «проблема → решение → результат», со скриншотами и стеком. Откройте
+            ссылку и посмотрите, как это читает клиент или рекрутер.
+          </p>
+
+          <div className="showcase-window">
+            <div className="showcase-window-bar">
+              <span className="showcase-window-dots" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <Link to="/demo" className="showcase-window-url">
+                /demo
+              </Link>
             </div>
-            <div className="landing-demo-body">
-              <div className="landing-demo-profile">
-                <div className="landing-demo-avatar" />
+
+            <div className="showcase-window-body">
+              <div className="showcase-profile">
+                <div className="showcase-avatar">А</div>
                 <div>
-                  <strong>Дмитрий К.</strong>
+                  <strong>Александр И.</strong>
                   <span>Full-Stack разработчик</span>
                 </div>
+                <div className="tech-row showcase-techs">
+                  <span className="badge badge-tech">C#</span>
+                  <span className="badge badge-tech">ASP.NET Core</span>
+                  <span className="badge badge-tech">PostgreSQL</span>
+                  <span className="badge badge-tech">PWA</span>
+                </div>
               </div>
-              <div className="landing-demo-projects">
-                <div className="landing-demo-project">
-                  <strong>Telegram CRM</strong>
-                  <span className="landing-demo-line">Проблема · Решение · Результат</span>
-                  <div className="tech-row">
-                    <span className="badge badge-tech">Python</span>
-                    <span className="badge badge-tech">FastAPI</span>
-                    <span className="badge badge-tech">React</span>
-                  </div>
-                </div>
-                <div className="landing-demo-project">
-                  <strong>Analytics Dashboard</strong>
-                  <span className="landing-demo-line">Проблема · Решение · Результат</span>
-                  <div className="tech-row">
-                    <span className="badge badge-tech">TypeScript</span>
-                    <span className="badge badge-tech">PostgreSQL</span>
-                  </div>
-                </div>
+
+              <div className="showcase-shots">
+                {SHOWCASE_SHOTS.map((shot) => (
+                  <figure key={shot.src} className="showcase-shot">
+                    <img src={shot.src} alt={shot.alt} loading="lazy" />
+                    <figcaption>{shot.alt}</figcaption>
+                  </figure>
+                ))}
+              </div>
+
+              <div className="showcase-case">
+                <h3>ELORA — онлайн-запись в студию красоты</h3>
+                <p>
+                  24 услуги, запись в 8 шагов и серверный контроль пересечений слотов.
+                  Полный кейс — с проблемой, решением и результатом.
+                </p>
+                <Link to="/demo" className="btn btn-primary">
+                  Открыть портфолио →
+                </Link>
               </div>
             </div>
+          </div>
+
+          <p className="showcase-note">
+            Это демонстрационный аккаунт. Зарегистрируйтесь — и ваше портфолио
+            будет выглядеть так же, только с вашими проектами.
+          </p>
+        </div>
+      </section>
+
+      <section className="landing-steps">
+        <div className="container">
+          <h2>Три шага до публичной ссылки</h2>
+          <div className="steps-grid">
+            {STEPS.map((step, index) => (
+              <div key={step.title} className="card card-pad step-card">
+                <span className="step-number">{index + 1}</span>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

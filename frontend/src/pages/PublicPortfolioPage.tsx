@@ -192,8 +192,8 @@ export function PublicPortfolioPage() {
                     )}
                   </div>
                   <div className="pf-project-body">
-                    <h3>{project.title}</h3>
-                    <p>{project.short_description}</p>
+                    <h3 className="pf-project-title">{project.title}</h3>
+                    <p className="pf-project-desc">{project.short_description}</p>
                     <div className="tech-row">
                       {project.technologies.slice(0, 4).map((t) => (
                         <span key={t.id} className="badge badge-tech">

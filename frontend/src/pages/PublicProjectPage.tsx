@@ -8,6 +8,55 @@ import { ApiError } from "../services/api";
 import { portfolioApi } from "../services/portfolio";
 import type { PublicProject } from "../types";
 
+/**
+ * Renders case-study text the way authors write it: blank lines separate
+ * blocks, and runs of "•" / "-" lines become real lists. Mixed blocks (a plain
+ * line followed by bullets) are split accordingly, otherwise the whole section
+ * collapses into one dense run of text.
+ */
+function CaseText({ text }: { text: string }) {
+  const isBullet = (line: string) => /^[-•*]\s+/.test(line);
+
+  const blocks = text.split(/\n\s*\n/).filter((b) => b.trim());
+
+  return (
+    <>
+      {blocks.map((block, i) => {
+        const lines = block
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+
+        // Pre-group each line as either a bullet or a paragraph so a run of
+        // bullets becomes exactly one <ul>, even inside a mixed block.
+        const groups: Array<{ bullet: boolean; items: string[] }> = [];
+        for (const line of lines) {
+          const bullet = isBullet(line);
+          const last = groups[groups.length - 1];
+          if (last && last.bullet === bullet) last.items.push(line);
+          else groups.push({ bullet, items: [line] });
+        }
+
+        return (
+          <div key={i} className="case-text-block">
+            {groups.map((group, j) =>
+              group.bullet ? (
+                <ul key={j}>
+                  {group.items.map((item, k) => (
+                    <li key={k}>{item.replace(/^[-•*]\s+/, "")}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p key={j}>{group.items.join(" ")}</p>
+              ),
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export function PublicProjectPage() {
   const { username, slug } = useParams<{ username: string; slug: string }>();
   const [data, setData] = useState<PublicProject | null>(null);
@@ -92,13 +141,13 @@ export function PublicProjectPage() {
           {project.problem && (
             <section className="pf-case-section">
               <h4>Проблема</h4>
-              <p>{project.problem}</p>
+              <CaseText text={project.problem} />
             </section>
           )}
           {project.solution && (
             <section className="pf-case-section">
               <h4>Решение</h4>
-              <p>{project.solution}</p>
+              <CaseText text={project.solution} />
             </section>
           )}
           {project.role && (
@@ -110,17 +159,13 @@ export function PublicProjectPage() {
           {project.features && (
             <section className="pf-case-section">
               <h4>Функции</h4>
-              <ul>
-                {project.features.split("\n").map((line, i) =>
-                  line.trim() ? <li key={i}>{line.trim()}</li> : null,
-                )}
-              </ul>
+              <CaseText text={project.features} />
             </section>
           )}
           {project.result && (
             <section className="pf-case-section">
               <h4>Результат</h4>
-              <p>{project.result}</p>
+              <CaseText text={project.result} />
             </section>
           )}
         </div>
