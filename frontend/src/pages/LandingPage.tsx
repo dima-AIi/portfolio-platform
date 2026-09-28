@@ -106,9 +106,9 @@ export function LandingPage() {
 
             <div className="showcase-window-body">
               <div className="showcase-profile">
-                <div className="showcase-avatar">А</div>
+                <div className="showcase-avatar">Д</div>
                 <div>
-                  <strong>Александр И.</strong>
+                  <strong>Дмитрий К.</strong>
                   <span>Full-Stack разработчик</span>
                 </div>
                 <div className="tech-row showcase-techs">
