@@ -32,7 +32,7 @@ GALLERY_IMAGES = [
 PROJECT_TECHNOLOGIES = ["C#", "ASP.NET Core", "HTML/CSS", "JavaScript", "PostgreSQL", "PWA", "SEO"]
 
 PROFILE = {
-    "display_name": "Александр И.",
+    "display_name": "Дмитрий К.",
     "headline": "Full-Stack разработчик",
     "bio": (
         "Собираю веб-сервисы, которые решают конкретную задачу бизнеса: "
@@ -41,8 +41,9 @@ PROFILE = {
     ),
     "location": "Москва",
     "website_url": ELORA_URL,
-    "github_url": "https://github.com/example",
-    "telegram_url": "https://t.me/example",
+    "github_url": "https://github.com/dima-Ai",
+    # No public Telegram handle yet — omitting it hides the button on the page.
+    "telegram_url": None,
     "theme": "classic",
 }
 

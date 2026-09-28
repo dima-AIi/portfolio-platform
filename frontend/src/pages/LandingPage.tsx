@@ -42,9 +42,6 @@ export function LandingPage() {
             PP
           </Link>
           <nav className="landing-nav">
-            <a href="#showcase" className="btn btn-ghost btn-sm">
-              Пример портфолио
-            </a>
             {user ? (
               <Link to="/dashboard" className="btn btn-primary btn-sm">
                 В личный кабинет
