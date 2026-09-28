@@ -74,3 +74,87 @@
     --text-3xl: 1.5rem;
   }
 }
+
+/* ============ UI theme (dashboard and auth screens) ============
+   The public portfolio has its own per-page themes (.pf-theme-*). This switch
+   covers the signed-in interface, which is where an owner spends their time.
+   It only redefines the shared tokens, so no component needs dark variants. */
+:root[data-theme="dark"] {
+  --color-bg: #0b1220;
+  --color-surface: #111c2e;
+  --color-surface-2: #1a2740;
+  --color-border: #24334d;
+  --color-border-strong: #334562;
+
+  --color-text: #e8eefb;
+  --color-text-secondary: #b6c4da;
+  --color-text-muted: #8fa0ba;
+
+  --color-primary: #7c8cf8;
+  --color-primary-hover: #93a0ff;
+  --color-primary-soft: #1e2a4d;
+  --color-primary-text-on: #0b1220;
+
+  --color-success-soft: #0d2f26;
+  --color-warning-soft: #33250c;
+  --color-danger-soft: #3a1519;
+
+  --color-dark: #060b14;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme="dark"] body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .input,
+:root[data-theme="dark"] .textarea {
+  background: var(--color-surface-2);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .input::placeholder,
+:root[data-theme="dark"] .textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .btn-secondary,
+:root[data-theme="dark"] .btn-ghost {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+:root[data-theme="dark"] .btn-secondary:hover:not(:disabled),
+:root[data-theme="dark"] .btn-ghost:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+:root[data-theme="dark"] .badge-tech {
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-strong);
+}
+
+:root[data-theme="dark"] .dashboard-sidebar,
+:root[data-theme="dark"] .public-header,
+:root[data-theme="dark"] .public-footer {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .auth-card,
+:root[data-theme="dark"] .empty-state {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}

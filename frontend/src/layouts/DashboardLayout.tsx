@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
+import { useUiTheme } from "../hooks/useUiTheme";
 
 const navItems = [
   { to: "/dashboard", label: "Обзор", end: true },
@@ -12,6 +13,7 @@ const navItems = [
 
 export function DashboardLayout() {
   const { user, logout } = useAuth();
+  const { theme, toggle } = useUiTheme();
 
   return (
     <div className="dashboard">
@@ -40,6 +42,15 @@ export function DashboardLayout() {
               Открыть публичную страницу ↗
             </NavLink>
           )}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm theme-toggle"
+            onClick={toggle}
+            aria-label={theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему"}
+            title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+          >
+            {theme === "dark" ? "☀ Светлая" : "☾ Тёмная"}
+          </button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={logout}>
             Выйти
           </button>

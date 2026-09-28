@@ -1,8 +1,12 @@
-from fastapi import Depends
+import uuid
+
+from fastapi import Depends, Request
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.repositories.page_view_repository import PageViewRepository
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.portfolio import PublicPortfolioResponse, PublicProjectResponse
@@ -17,6 +21,28 @@ class PortfolioService:
         self.db = db
         self.repo = ProjectRepository(db)
         self.users = UserRepository(db)
+
+    def _record_view(
+        self,
+        user_id: uuid.UUID,
+        path: str,
+        project_id: uuid.UUID | None = None,
+        request: Request | None = None,
+    ) -> None:
+        """Best-effort analytics: never let tracking break a page render."""
+        if request is None:
+            return
+        try:
+            PageViewRepository(self.db).record(
+                user_id=user_id,
+                path=path,
+                project_id=project_id,
+                referrer=request.headers.get("referer"),
+                user_agent=request.headers.get("user-agent"),
+            )
+        except SQLAlchemyError:
+            # A failed insert must not turn a 200 into a 500 for a visitor.
+            self.db.rollback()
 
     def build_sitemap(self) -> str:
         """Render sitemap.xml for every public portfolio and project page.
@@ -41,6 +67,7 @@ class PortfolioService:
         username: str,
         page: int | None = None,
         limit: int | None = None,
+        request: Request | None = None,
     ) -> PublicPortfolioResponse:
         user = self.users.get_by_username(username.lower())
         if not user:
@@ -50,6 +77,7 @@ class PortfolioService:
             raise AppError("PORTFOLIO_NOT_FOUND", "Портфолио не найдено.", 404)
         profile.view_count += 1
         self.db.commit()
+        self._record_view(user.id, f"/{user.username}", request=request)
 
         if page is not None and limit is not None:
             offset = (page - 1) * limit
@@ -74,7 +102,12 @@ class PortfolioService:
             limit=limit,
         )
 
-    def get_public_project(self, username: str, slug: str) -> PublicProjectResponse:
+    def get_public_project(
+        self,
+        username: str,
+        slug: str,
+        request: Request | None = None,
+    ) -> PublicProjectResponse:
         user = self.users.get_by_username(username.lower())
         if not user:
             raise AppError("PROJECT_NOT_FOUND", "Проект не найден.", 404)
@@ -85,6 +118,12 @@ class PortfolioService:
             raise AppError("PROJECT_NOT_FOUND", "Проект не найден.", 404)
         project.view_count += 1
         self.db.commit()
+        self._record_view(
+            user.id,
+            f"/{user.username}/projects/{project.slug}",
+            project_id=project.id,
+            request=request,
+        )
         return PublicProjectResponse(
             username=user.username,
             theme=user.profile.theme if user.profile else "classic",

@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
+import { AnalyticsPanel } from "../components/dashboard/AnalyticsPanel";
+import { GitHubImportDialog } from "../components/dashboard/GitHubImportDialog";
 import { CopyLinkButton } from "../components/ui/CopyLinkButton";
+import { Button } from "../components/ui/Button";
 import { OnboardingChecklist } from "../components/dashboard/OnboardingChecklist";
 import { firstName } from "../utils/firstName";
 import { plural } from "../utils/plural";
@@ -15,6 +18,7 @@ export function DashboardPage() {
   const [data, setData] = useState<{ profile: Profile; projects: Project[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([profileApi.get(), projectsApi.list()])
@@ -137,6 +141,9 @@ export function DashboardPage() {
             <Link to="/dashboard/projects" className="btn btn-secondary btn-sm">
               Все проекты →
             </Link>
+            <Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
+              Импорт из GitHub
+            </Button>
             <Link to="/dashboard/projects/new" className="btn btn-primary btn-sm">
               + Добавить проект
             </Link>
@@ -218,6 +225,8 @@ export function DashboardPage() {
         </div>
       </section>
 
+      <AnalyticsPanel />
+
       <div className="dashboard-actions">
         <div className="card card-pad">
           <h3>Поделитесь портфолио</h3>
@@ -234,6 +243,8 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {importOpen && <GitHubImportDialog onClose={() => setImportOpen(false)} />}
     </div>
   );
 }

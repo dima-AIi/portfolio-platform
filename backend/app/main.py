@@ -7,7 +7,16 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.staticfiles import StaticFiles
 
-from app.api import auth, images, profile, project_technologies, projects, public, technologies
+from app.api import (
+    auth,
+    images,
+    owner_data,
+    profile,
+    project_technologies,
+    projects,
+    public,
+    technologies,
+)
 from app.core.config import settings
 from app.utils.errors import (
     AppError,
@@ -85,6 +94,7 @@ app.include_router(projects.router, prefix=api_prefix)
 app.include_router(project_technologies.router, prefix=api_prefix)
 app.include_router(technologies.router, prefix=api_prefix)
 app.include_router(images.router, prefix=api_prefix)
+app.include_router(owner_data.router, prefix=api_prefix)
 app.include_router(public.router, prefix=api_prefix)
 
 

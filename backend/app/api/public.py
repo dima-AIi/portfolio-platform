@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import PlainTextResponse
 
 from app.services.portfolio_service import PortfolioService
@@ -18,14 +18,17 @@ def sitemap(service: PortfolioService = Depends()) -> PlainTextResponse:
 
 @router.get("/{username}")
 def get_portfolio(
+    request: Request,
     username: str,
     page: int | None = Query(default=None, ge=1),
     limit: int | None = Query(default=None, ge=1, le=50),
     service: PortfolioService = Depends(),
 ):
-    return service.get_portfolio(username, page, limit)
+    return service.get_portfolio(username, page, limit, request=request)
 
 
 @router.get("/{username}/projects/{slug}")
-def get_public_project(username: str, slug: str, service: PortfolioService = Depends()):
-    return service.get_public_project(username, slug)
+def get_public_project(
+    request: Request, username: str, slug: str, service: PortfolioService = Depends()
+):
+    return service.get_public_project(username, slug, request=request)

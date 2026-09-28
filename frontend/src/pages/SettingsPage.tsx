@@ -10,6 +10,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../hooks/useToast";
 import { ApiError } from "../services/api";
 import { authApi } from "../services/auth";
+import { exportApi } from "../services/ownerData";
 import { scorePassword } from "../utils/passwordStrength";
 
 export function SettingsPage() {
@@ -189,6 +190,17 @@ export function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      <div className="card card-pad settings-card export-card">
+        <h3>Скачать свои данные</h3>
+        <p className="muted">
+          Один файл со всем: профиль, проекты, технологии и ссылки на изображения.
+          Храните копию — она останется с вами, даже если аккаунт будет удалён.
+        </p>
+        <Button variant="secondary" onClick={() => exportApi.download()}>
+          Скачать JSON
+        </Button>
+      </div>
 
       <div className="card card-pad settings-card danger-zone">
         <h3>Удаление аккаунта</h3>

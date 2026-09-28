@@ -7,6 +7,7 @@ import { TechSelect } from "../components/project/TechSelect";
 import { Button } from "../components/ui/Button";
 import { Field, Input, Textarea } from "../components/ui/Field";
 import { StatusBadge } from "../components/ui/StatusBadge";
+import { useDraftBackup } from "../hooks/useDraftBackup";
 import { useToast } from "../hooks/useToast";
 import { ApiError } from "../services/api";
 import { portfolioApi } from "../services/portfolio";
@@ -97,6 +98,15 @@ export function ProjectEditorPage() {
     [],
   );
 
+  // Keep a local copy of edits so a closed tab cannot lose the case text.
+  // Only for an existing project: a brand-new one has no id to key on yet.
+  const draftKey = isNew ? "" : `project-${projectId}`;
+  const { save: saveDraft, clear: clearDraft } = useDraftBackup(draftKey, payload);
+  useEffect(() => {
+    if (!isNew) saveDraft(payload);
+    // Intentionally keyed on the payload value: this is the debounce.
+  }, [payload, isNew, saveDraft]);
+
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
     if (!payload.title) errors.title = "Название обязательно.";
@@ -129,6 +139,8 @@ export function ProjectEditorPage() {
       }
       const updated = await projectsApi.update(projectId!, payload);
       setProject(updated);
+      // The server now holds this text, so the local safety copy is stale.
+      clearDraft();
       showSuccess("Проект сохранён");
       return updated;
     } catch (err) {

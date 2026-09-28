@@ -1,3 +1,4 @@
+from app.models.page_view import PageView
 from app.models.password_reset import PasswordReset
 from app.models.profile import Profile
 from app.models.project import STATUS_DRAFT, STATUS_PUBLISHED, Project
@@ -12,6 +13,7 @@ __all__ = [
     "ProjectImage",
     "project_technologies",
     "PasswordReset",
+    "PageView",
     "STATUS_DRAFT",
     "STATUS_PUBLISHED",
 ]
