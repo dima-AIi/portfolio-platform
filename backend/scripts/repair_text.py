@@ -101,12 +101,21 @@ def main() -> int:
     print("== project ==")
     _, _, listing = call("GET", "/projects", base, token)
     items = listing.get("items", []) if isinstance(listing, dict) else []
-    target = next((p for p in items if p["slug"] == "elora"), None)
+    target = next((p for p in items if "elora" in p["slug"]), None)
     if target is None:
         print("  FAIL no elora project found")
         return 1
     status, _, _ = call("PUT", f"/projects/{target['id']}", base, token, ELORA_PROJECT)
     print(f"  {'OK' if status == 200 else 'FAIL'} updated {target['id']} -> {status}")
+
+    # The seeder copy carries a long descriptive title, and a title change
+    # regenerates the slug — which would move the project off the published
+    # /projects/elora URL. Restore the short title so the public link keeps
+    # working; the case text stays as the seeder wrote it.
+    status, _, data = call("GET", f"/projects/{target['id']}", base, token)
+    if data.get("slug") != "elora":
+        status, _, fixed = call("PUT", f"/projects/{target['id']}", base, token, {"title": "ELORA"})
+        print(f"  {'OK' if status == 200 else 'FAIL'} restored slug -> {fixed.get('slug')}")
 
     print("== verify (public payload) ==")
     _, _, public = call("GET", f"/public/{username}", base)
