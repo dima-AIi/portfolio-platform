@@ -20,6 +20,7 @@ from app.schemas.auth import (
 from app.services.email_service import send_password_reset_email
 from app.utils.errors import AppError
 from app.utils.images import delete_image_file
+from app.utils.slug import is_valid_username
 
 ALREADY_EXISTS_STATUS = 409
 GENERIC_RESET_DETAIL = "Если аккаунт с таким email существует, код подтверждения отправлен."
@@ -31,8 +32,6 @@ class AuthService:
         self.resets = PasswordResetRepository(db)
 
     def register(self, data: RegisterRequest) -> TokenResponse:
-        from app.utils.slug import is_valid_username
-
         if not is_valid_username(data.username):
             raise AppError("USERNAME_RESERVED", "Этот username зарезервирован системой. Выберите другой.", 422)
         if self.repo.get_by_email(data.email):
