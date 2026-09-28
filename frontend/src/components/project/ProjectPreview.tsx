@@ -47,7 +47,7 @@ export function ProjectPreview({ project }: ProjectPreviewProps) {
           {project.features && (
             <section className="preview-section">
               <h4>Функции</h4>
-              <CaseText text={project.features} />
+              <CaseText text={project.features} linesAsList />
             </section>
           )}
           {project.result && (

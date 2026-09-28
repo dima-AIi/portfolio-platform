@@ -111,7 +111,7 @@ export function PublicProjectPage() {
           {project.features && (
             <section className="pf-case-section">
               <h4>Функции</h4>
-              <CaseText text={project.features} />
+              <CaseText text={project.features} linesAsList />
             </section>
           )}
           {project.result && (
