@@ -541,6 +541,12 @@
   font-size: var(--text-lg);
 }
 
+/* Explanatory line under a section heading, before the first field. */
+.editor-section-lead {
+  margin: calc(var(--space-4) * -1 + var(--space-2)) 0 var(--space-4);
+  max-width: 60ch;
+}
+
 .editor-footer {
   margin-top: var(--space-6);
   align-items: center;

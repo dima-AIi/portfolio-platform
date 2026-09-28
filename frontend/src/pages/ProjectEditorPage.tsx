@@ -271,45 +271,54 @@ export function ProjectEditorPage() {
 
           <section className="card card-pad editor-section">
             <h3>Кейс</h3>
-            <Field label="Проблема" hint="какую проблему решал проект?">
+            <p className="field-hint editor-section-lead">
+              Заполняйте по мере готовности — проект сохраняется как черновик и виден только
+              вам. Публиковать можно любую часть: например, описать пока только проблему и
+              решение, а результат добавить позже.
+            </p>
+            <Field label="Проблема" hint="что было не так и кому это мешало">
               <Textarea
                 value={project?.problem ?? ""}
                 onChange={(e) => setField("problem", e.target.value)}
-                placeholder="Заявки терялись в переписках, менеджеры отвечали с задержкой в часы."
+                placeholder="Клиенты студии записывались по телефону. Администратор тратил по часу в день на сверку, а часть клиентов не дожидалась ответа и уходила."
                 rows={4}
               />
             </Field>
-            <Field label="Решение" hint="как проблема была решена?">
+            <Field label="Решение" hint="что именно вы сделали">
               <Textarea
                 value={project?.solution ?? ""}
                 onChange={(e) => setField("solution", e.target.value)}
-                placeholder="Разработал CRM с ботом для приёма заявок и уведомлениями менеджерам."
+                placeholder="Сделал онлайн-запись: клиент выбирает услугу, мастера и свободный слот. Пересечения исключает сервер, а не ручная сверка."
                 rows={4}
               />
             </Field>
             <div className="form-grid">
-              <Field label="Моя роль">
+              <Field label="Моя роль" hint="необязательно. чем занимались вы лично">
                 <Input
                   value={project?.role ?? ""}
                   onChange={(e) => setField("role", e.target.value)}
-                  placeholder="Full-Stack разработчик"
+                  placeholder="Full-Stack разработчик: проектирование, вёрстка, серверная логика"
                   maxLength={120}
                 />
               </Field>
-              <Field label="Результат" hint="чего удалось достичь?">
-                <Input
+              <Field label="Результат" hint="что изменилось. числа работают лучше слов">
+                <Textarea
                   value={project?.result ?? ""}
                   onChange={(e) => setField("result", e.target.value)}
-                  placeholder="Заявки перестали теряться, время ответа сократилось вдвое."
+                  placeholder="Запись занимает около минуты и не требует звонков. Пересечения исключены на уровне сервера."
+                  rows={3}
                 />
               </Field>
             </div>
-            <Field label="Функции" hint="что было реализовано? по одному пункту на строку.">
+            <Field
+              label="Функции"
+              hint="необязательно. одна функция — одна строка, в списке появятся точки-маркеры"
+            >
               <Textarea
                 value={project?.features ?? ""}
                 onChange={(e) => setField("features", e.target.value)}
-                placeholder={"Бот приёма заявок\nВоронка сделок\nУведомления менеджерам"}
-                rows={3}
+                placeholder={"Онлайн-запись за 8 шагов\nКаталог услуг с ценами и фильтрами\nЛичный кабинет с историей\nPWA с офлайн-оболочкой"}
+                rows={4}
               />
             </Field>
           </section>
