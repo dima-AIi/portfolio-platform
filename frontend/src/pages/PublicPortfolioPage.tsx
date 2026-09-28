@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ErrorBanner } from "../components/ui/ErrorBanner";
-import { useSeo } from "../hooks/useSeo";
+import { usePersonSchema, useSeo } from "../hooks/useSeo";
 import { ApiError } from "../services/api";
 import { portfolioApi } from "../services/portfolio";
 import type { PublicPortfolio } from "../types";
@@ -14,18 +14,27 @@ const CONTACT_LABELS: Record<string, string> = {
   telegram_url: "Telegram",
 };
 
+/** Projects shown before a "load more" control appears. */
+const PAGE_SIZE = 9;
+
 export function PublicPortfolioPage() {
   const { username } = useParams<{ username: string }>();
   const [portfolio, setPortfolio] = useState<PublicPortfolio | null>(null);
+  const [visible, setVisible] = useState<PublicPortfolio["projects"]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!username) return;
     setLoading(true);
+    setError(null);
     portfolioApi
-      .getPublic(username)
-      .then(setPortfolio)
+      .getPublicPage(username, 1, PAGE_SIZE)
+      .then((data) => {
+        setPortfolio(data);
+        setVisible(data.projects);
+      })
       .catch((err) =>
         setError(
           err instanceof ApiError && err.status === 404 ? "not-found" : "Не удалось загрузить портфолио.",
@@ -33,6 +42,24 @@ export function PublicPortfolioPage() {
       )
       .finally(() => setLoading(false));
   }, [username]);
+
+  const loadMore = useCallback(async () => {
+    if (!username || loadingMore) return;
+    setLoadingMore(true);
+    const nextPage = Math.floor(visible.length / PAGE_SIZE) + 1;
+    try {
+      const data = await portfolioApi.getPublicPage(username, nextPage, PAGE_SIZE);
+      setVisible((current) => {
+        // Guard against duplicates if two requests race on a slow connection.
+        const seen = new Set(current.map((p) => p.id));
+        return [...current, ...data.projects.filter((p) => !seen.has(p.id))];
+      });
+    } catch {
+      /* keep what is already on screen */
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [username, visible.length, loadingMore]);
 
   useSeo({
     title: portfolio
@@ -42,6 +69,9 @@ export function PublicPortfolioPage() {
     image: portfolio?.profile.avatar_url ?? null,
     canonicalPath: username ? `/${username}` : null,
   });
+
+  // Structured data helps search engines render a rich person/portfolio card.
+  usePersonSchema(portfolio);
 
   if (loading) {
     return (
@@ -142,11 +172,11 @@ export function PublicPortfolioPage() {
         {/* Проекты */}
         <section className="pf-section">
           <h2>Проекты</h2>
-          {portfolio.projects.length === 0 ? (
+          {visible.length === 0 ? (
             <p className="muted">Опубликованных проектов пока нет.</p>
           ) : (
             <div className="pf-projects-grid">
-              {portfolio.projects.map((project) => (
+              {visible.map((project) => (
                 <Link
                   key={project.id}
                   to={`/${portfolio.username}/projects/${project.slug}`}
@@ -174,6 +204,20 @@ export function PublicPortfolioPage() {
                   </div>
                 </Link>
               ))}
+            </div>
+          )}
+          {visible.length < portfolio.total && (
+            <div className="pf-load-more no-print">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => void loadMore()}
+                disabled={loadingMore}
+              >
+                {loadingMore
+                  ? "Загрузка…"
+                  : `Показать ещё (${portfolio.total - visible.length})`}
+              </button>
             </div>
           )}
         </section>

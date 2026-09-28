@@ -6,6 +6,9 @@ export const portfolioApi = {
 
   getPublic: (username: string) => api.get<PublicPortfolio>(`/public/${username}`),
 
+  getPublicPage: (username: string, page: number, limit: number) =>
+    api.get<PublicPortfolio>(`/public/${username}?page=${page}&limit=${limit}`),
+
   getPublicProject: (username: string, slug: string) =>
     api.get<PublicProject>(`/public/${username}/projects/${slug}`),
 };

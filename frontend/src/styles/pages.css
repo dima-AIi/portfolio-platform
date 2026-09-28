@@ -1586,3 +1586,10 @@
     font-size: var(--text-3xl);
   }
 }
+
+/* Load-more control on a public portfolio. */
+.pf-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
