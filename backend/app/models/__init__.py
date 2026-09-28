@@ -1,8 +1,8 @@
-from app.models.user import User
-from app.models.profile import Profile
-from app.models.project import Project, STATUS_DRAFT, STATUS_PUBLISHED
-from app.models.technology import Technology, ProjectImage, project_technologies
 from app.models.password_reset import PasswordReset
+from app.models.profile import Profile
+from app.models.project import STATUS_DRAFT, STATUS_PUBLISHED, Project
+from app.models.technology import ProjectImage, Technology, project_technologies
+from app.models.user import User
 
 __all__ = [
     "User",

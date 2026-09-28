@@ -14,7 +14,7 @@ COMMON_PASSWORDS = frozenset({
     "matrix123", "football", "baseball", "sunshine", "princess",
     "jordan23", "hunter123", "whatever", "computer", "internet",
     "samantha", "alexander", "jennifer", "michelle", "geronimo",
-    "1234qwer", "asdfghjkl", "zxcvbnm123", "1234abcd",
+    "asdfghjkl", "zxcvbnm123", "1234abcd",
 })
 
 

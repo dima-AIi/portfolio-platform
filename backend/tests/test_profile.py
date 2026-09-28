@@ -1,4 +1,3 @@
-import uuid
 
 from tests.conftest import create_project
 
@@ -87,7 +86,6 @@ class TestTheme:
         assert response.status_code == 422
 
     def test_theme_exposed_on_public_project(self, client, auth_headers):
-        from tests.conftest import create_project
 
         client.put("/api/v1/profile", headers=auth_headers, json={"theme": "minimal"})
         project = create_project(client, auth_headers, title="Themed")

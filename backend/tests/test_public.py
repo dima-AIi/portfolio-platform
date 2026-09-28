@@ -1,4 +1,3 @@
-import uuid
 
 from tests.conftest import create_project
 
