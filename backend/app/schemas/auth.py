@@ -72,3 +72,13 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class SessionResponse(BaseModel):
+    """Returned to browser clients.
+
+    Deliberately carries no token: the JWT travels in an httpOnly cookie so
+    that script on the page cannot read it.
+    """
+
+    user: UserResponse

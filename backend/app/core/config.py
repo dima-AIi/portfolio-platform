@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 5
     PASSWORD_RESET_TTL_MINUTES: int = 15
+    # Public base URL of the frontend. Used to build absolute URLs for the
+    # sitemap and Open Graph tags, which must be absolute to be crawlable.
+    PUBLIC_URL: str = "http://localhost:5173"
 
     # SMTP (optional). When not configured, reset codes are returned in the API
     # response in development mode instead of being emailed.
