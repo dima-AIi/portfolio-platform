@@ -1008,14 +1008,38 @@
 .pf-project-card {
   overflow: hidden;
   color: inherit;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.25s ease;
   display: flex;
   flex-direction: column;
 }
 
 .pf-project-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-border-strong);
+}
+
+/* The cover zooms slightly so the card feels alive without moving text. */
+.pf-project-card .pf-project-cover {
+  overflow: hidden;
+}
+
+.pf-project-card:hover .pf-project-cover img {
+  transform: scale(1.05);
+}
+
+.pf-project-cover img {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Keyboard users get a clear ring, not just the hover lift. */
+.pf-project-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  box-shadow: var(--shadow-lg);
 }
 
 .pf-project-cover {
@@ -1199,6 +1223,38 @@
   display: flex;
   gap: var(--space-3);
   margin-top: var(--space-6);
+}
+
+/* ============ Scroll reveal ============
+   Applied via RevealOnScroll. Starts offset and settles in place; the
+   reduced-motion block above collapses the transition so the content is
+   simply present. */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ============ Reduced motion ============
+   Honour the OS-level request: animations can trigger nausea and dizziness
+   for people with vestibular disorders. Collapse durations to near-zero
+   rather than removing rules, so hover/active feedback still appears. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ============ Password eye toggle ============ */
@@ -1560,6 +1616,14 @@
   .no-print,
   .pf-actions {
     display: none !important;
+  }
+
+  /* Scroll-reveal sections start at opacity 0 and are only made visible by
+     a JS observer that may never fire for an off-screen section. Printing
+     must never depend on that, or exported PDFs come out blank. */
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   body,

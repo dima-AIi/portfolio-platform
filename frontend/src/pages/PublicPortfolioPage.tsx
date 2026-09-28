@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ErrorBanner } from "../components/ui/ErrorBanner";
+import { RevealOnScroll } from "../components/ui/RevealOnScroll";
 import { usePersonSchema, useSeo } from "../hooks/useSeo";
 import { ApiError } from "../services/api";
 import { portfolioApi } from "../services/portfolio";
@@ -149,15 +150,15 @@ export function PublicPortfolioPage() {
       <div className="container pf-content">
         {/* О себе */}
         {profile.bio && (
-          <section className="pf-section">
+          <RevealOnScroll className="pf-section">
             <h2>О себе</h2>
             <p className="pf-bio">{profile.bio}</p>
-          </section>
+          </RevealOnScroll>
         )}
 
         {/* Технологии */}
         {portfolio.skills.length > 0 && (
-          <section className="pf-section">
+          <RevealOnScroll className="pf-section">
             <h2>Технологии</h2>
             <div className="tech-row">
               {portfolio.skills.map((skill) => (
@@ -166,17 +167,17 @@ export function PublicPortfolioPage() {
                 </span>
               ))}
             </div>
-          </section>
+          </RevealOnScroll>
         )}
 
         {/* Проекты */}
-        <section className="pf-section">
+        <RevealOnScroll className="pf-section">
           <h2>Проекты</h2>
           {visible.length === 0 ? (
             <p className="muted">Опубликованных проектов пока нет.</p>
           ) : (
             <div className="pf-projects-grid">
-              {visible.map((project) => (
+              {visible.map((project, i) => (
                 <Link
                   key={project.id}
                   to={`/${portfolio.username}/projects/${project.slug}`}
@@ -184,7 +185,13 @@ export function PublicPortfolioPage() {
                 >
                   <div className="pf-project-cover">
                     {project.cover_image_url ? (
-                      <img src={project.cover_image_url} alt="" loading="lazy" />
+                      <img
+                        src={project.cover_image_url}
+                        alt=""
+                        // The first card is above the fold — do not lazy-load it.
+                        loading={i === 0 ? "eager" : "lazy"}
+                        decoding="async"
+                      />
                     ) : (
                       <div className="pf-project-cover-fallback">
                         {project.title.charAt(0).toUpperCase()}
@@ -220,11 +227,11 @@ export function PublicPortfolioPage() {
               </button>
             </div>
           )}
-        </section>
+        </RevealOnScroll>
 
         {/* Контакты */}
         {contacts.length > 0 && (
-          <section className="pf-section pf-contacts">
+          <RevealOnScroll className="pf-section pf-contacts">
             <h2>Связаться</h2>
             <p className="muted">Напишите мне по любому из каналов:</p>
             <div className="pf-contact-row">
@@ -240,7 +247,7 @@ export function PublicPortfolioPage() {
                 </a>
               ))}
             </div>
-          </section>
+          </RevealOnScroll>
         )}
       </div>
     </div>
