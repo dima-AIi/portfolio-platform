@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, api } from "./api";
+import { ApiError, API_BASE, api } from "./api";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -106,5 +106,20 @@ describe("api client", () => {
     const [, init] = fetchMock.mock.calls[0];
     expect(init.method).toBe("DELETE");
     expect(init.body).toBe(JSON.stringify({ password: "secret" }));
+  });
+});
+
+describe("API_BASE", () => {
+  it("defaults to the same-origin API prefix when unset", () => {
+    // Vite inlines the variable at build time. When the hosting dashboard has
+    // it as an empty string the built bundle asked for "/public/..." instead
+    // of "/api/v1/public/...", hit the SPA rewrite and rendered an error.
+    expect(API_BASE).toBe("/api/v1");
+  });
+
+  it("never resolves to an empty base", () => {
+    // Guards the `||` vs `??` mistake: "" must not survive as the base URL.
+    expect(API_BASE).not.toBe("");
+    expect(API_BASE.startsWith("/")).toBe(true);
   });
 });

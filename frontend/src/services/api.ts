@@ -11,7 +11,16 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+/**
+ * Base URL for every API call.
+ *
+ * Vite inlines `import.meta.env.VITE_API_BASE_URL` at build time. An empty
+ * variable in the hosting dashboard is substituted as "", and `??` only falls
+ * back on null/undefined — so `env.X ?? "/api/v1"` silently produced "" and
+ * every request went to the SPA routes instead of the API. `||` treats the
+ * empty string as "not configured" and keeps the default.
+ */
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {

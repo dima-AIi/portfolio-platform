@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { API_BASE, api } from "./api";
 
 export interface AnalyticsDailyPoint {
   date: string;
@@ -59,7 +59,7 @@ export const exportApi = {
   download: () => {
     const link = document.createElement("a");
     // The session lives in an httpOnly cookie, so a plain navigation keeps it.
-    link.href = `${import.meta.env.VITE_API_BASE_URL ?? "/api/v1"}/export`;
+    link.href = `${API_BASE}/export`;
     link.rel = "noopener";
     document.body.appendChild(link);
     link.click();
