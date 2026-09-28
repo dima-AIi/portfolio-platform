@@ -1,7 +1,12 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { useSeo } from "./useSeo";
+import { usePersonSchema, useSeo } from "./useSeo";
+
+function jsonLd(id: string): Record<string, unknown> | null {
+  const el = document.getElementById(id);
+  return el ? JSON.parse(el.textContent ?? "{}") : null;
+}
 
 function metaContent(selector: string): string | null {
   return document.head.querySelector(selector)?.getAttribute("content") ?? null;
@@ -84,5 +89,92 @@ describe("useSeo", () => {
 
     expect(document.head.querySelectorAll('meta[name="description"]')).toHaveLength(1);
     expect(document.head.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
+  });
+});
+describe("usePersonSchema", () => {
+  const portfolio = {
+    username: "dmitriy",
+    profile: {
+      display_name: "Dmitriy K.",
+      headline: "Python & Full-Stack Developer",
+      bio: "I build automation tools.",
+      avatar_url: "/uploads/avatar.png",
+      website_url: "https://dmitriy.example.com",
+      github_url: "https://github.com/dmitriy",
+      linkedin_url: null,
+      telegram_url: "https://t.me/dmitriy",
+    },
+    skills: ["Python", "FastAPI"],
+  };
+
+  function graph(index: number) {
+    const data = jsonLd("ld-person");
+    return (data?.["@graph"] as Record<string, unknown>[])[index];
+  }
+
+  it("emits a Person node with name, role and skills", () => {
+    renderHook(() => usePersonSchema(portfolio));
+
+    const person = graph(0);
+    expect(person["@type"]).toBe("Person");
+    expect(person.name).toBe("Dmitriy K.");
+    expect(person.jobTitle).toBe("Python & Full-Stack Developer");
+    expect(person.knowsAbout).toEqual(["Python", "FastAPI"]);
+  });
+
+  it("resolves relative image and profile links to absolute URLs", () => {
+    renderHook(() => usePersonSchema(portfolio));
+
+    const person = graph(0);
+    const expectedImage = new URL("/uploads/avatar.png", window.location.origin).href;
+    expect(person.image).toBe(expectedImage);
+    expect((person.sameAs as string[]).every((u) => u.startsWith("http"))).toBe(true);
+  });
+
+  it("omits sameAs entirely when no social links are set", () => {
+    renderHook(() =>
+      usePersonSchema({
+        ...portfolio,
+        profile: { ...portfolio.profile, website_url: null, github_url: null, telegram_url: null },
+      }),
+    );
+
+    expect(graph(0).sameAs).toBeUndefined();
+  });
+
+  it("falls back to the username when no display name is set", () => {
+    renderHook(() =>
+      usePersonSchema({ ...portfolio, profile: { ...portfolio.profile, display_name: null } }),
+    );
+
+    expect(graph(0).name).toBe("@dmitriy");
+  });
+
+  it("adds a ProfilePage node linking back to the site", () => {
+    renderHook(() => usePersonSchema(portfolio));
+
+    const page = graph(1);
+    expect(page["@type"]).toBe("ProfilePage");
+    expect((page.isPartOf as Record<string, string>).name).toBe("Portfolio Platform");
+  });
+
+  it("removes the script when there is no portfolio", () => {
+    const { rerender } = renderHook(
+      ({ value }: { value: typeof portfolio | null }) => usePersonSchema(value),
+      { initialProps: { value: portfolio as typeof portfolio | null } },
+    );
+    expect(jsonLd("ld-person")).not.toBeNull();
+
+    rerender({ value: null });
+
+    expect(jsonLd("ld-person")).toBeNull();
+  });
+
+  it("does not duplicate the script tag across renders", () => {
+    const { rerender } = renderHook(() => usePersonSchema(portfolio));
+    rerender();
+    rerender();
+
+    expect(document.querySelectorAll("#ld-person")).toHaveLength(1);
   });
 });

@@ -10,6 +10,88 @@ interface SeoOptions {
 }
 
 const SITE_NAME = "Portfolio Platform";
+
+/** Serialize a value into a <script type="application/ld+json"> block. */
+function setJsonLd(id: string, data: unknown | null) {
+  let el = document.getElementById(id) as HTMLScriptElement | null;
+  if (!data) {
+    el?.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement("script");
+    el.id = id;
+    el.type = "application/ld+json";
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(data);
+}
+
+function absolute(url: string | null): string | undefined {
+  if (!url) return undefined;
+  return new URL(url, window.location.origin).href;
+}
+
+/**
+ * JSON-LD Person + ProfilePage markup for a public portfolio.
+ *
+ * Search engines use this to show a name, job title and links directly in
+ * results, which is the main payoff of a public portfolio being crawlable.
+ */
+export function usePersonSchema(portfolio: {
+  username: string;
+  profile: {
+    display_name: string | null;
+    headline: string | null;
+    bio: string | null;
+    avatar_url: string | null;
+    website_url: string | null;
+    github_url: string | null;
+    linkedin_url: string | null;
+    telegram_url: string | null;
+  };
+  skills: string[];
+} | null) {
+  useEffect(() => {
+    if (!portfolio) {
+      setJsonLd("ld-person", null);
+      return;
+    }
+    const { profile } = portfolio;
+    const name = profile.display_name || `@${portfolio.username}`;
+    const pageUrl = new URL(`/${portfolio.username}`, window.location.origin).href;
+    const sameAs = [
+      absolute(profile.website_url),
+      absolute(profile.github_url),
+      absolute(profile.linkedin_url),
+      absolute(profile.telegram_url),
+    ].filter((url): url is string => Boolean(url));
+
+    setJsonLd("ld-person", {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Person",
+          name,
+          url: pageUrl,
+          ...(profile.headline ? { jobTitle: profile.headline } : {}),
+          ...(profile.bio ? { description: profile.bio } : {}),
+          ...(absolute(profile.avatar_url) ? { image: absolute(profile.avatar_url) } : {}),
+          ...(sameAs.length ? { sameAs } : {}),
+          ...(portfolio.skills.length ? { knowsAbout: portfolio.skills } : {}),
+        },
+        {
+          "@type": "ProfilePage",
+          url: pageUrl,
+          name: `${name} — Портфолио`,
+          ...(profile.headline ? { about: { "@type": "Person", name, jobTitle: profile.headline } } : {}),
+          isPartOf: { "@type": "WebSite", name: SITE_NAME, url: window.location.origin },
+        },
+      ],
+    });
+  }, [portfolio]);
+}
+
 // Used when a page has nothing specific to say. A generic description still
 // ranks better than an empty <meta name="description">, and it replaces the
 // previous page's text instead of leaking it onto this one.

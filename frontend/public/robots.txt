@@ -4,3 +4,6 @@ Allow: /
 # Authenticated app areas and the API surface hold no public content.
 Disallow: /dashboard
 Disallow: /api/
+
+# Served by the backend from the real published data.
+Sitemap: https://portfolio-backend-rdaw.onrender.com/api/v1/public/sitemap.xml
