@@ -223,12 +223,14 @@ export function ProjectEditorPage() {
 
       <div className="editor-tabs">
         <button
+          type="button"
           className={`editor-tab ${tab === "edit" ? "active" : ""}`}
           onClick={() => setTab("edit")}
         >
           Редактирование
         </button>
         <button
+          type="button"
           className={`editor-tab ${tab === "preview" ? "active" : ""}`}
           onClick={() => setTab("preview")}
         >

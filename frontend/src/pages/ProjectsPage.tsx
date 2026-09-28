@@ -174,6 +174,7 @@ export function ProjectsPage() {
               <div className="project-row-actions">
                 <div className="reorder-controls">
                   <button
+                    type="button"
                     className="btn btn-ghost btn-sm btn-icon"
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
@@ -182,6 +183,7 @@ export function ProjectsPage() {
                     ↑
                   </button>
                   <button
+                    type="button"
                     className="btn btn-ghost btn-sm btn-icon"
                     onClick={() => move(index, 1)}
                     disabled={index === projects.length - 1}

@@ -40,7 +40,7 @@ export function DashboardLayout() {
               Открыть публичную страницу ↗
             </NavLink>
           )}
-          <button className="btn btn-ghost btn-sm" onClick={logout}>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={logout}>
             Выйти
           </button>
         </div>
