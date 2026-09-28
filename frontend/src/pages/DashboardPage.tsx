@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
+import { CopyLinkButton } from "../components/ui/CopyLinkButton";
 import { profileApi } from "../services/profile";
 import { projectsApi } from "../services/projects";
 import type { Profile, Project } from "../types";
@@ -94,11 +95,14 @@ export function DashboardPage() {
           <p className="muted">
             Ваша публичная страница: <strong>/{user?.username}</strong>
           </p>
-          {user && (
-            <Link to={`/${user.username}`} className="btn btn-secondary">
-              Открыть публичную страницу ↗
-            </Link>
-          )}
+          <div className="share-actions">
+            {user && <CopyLinkButton to={`/${user.username}`} />}
+            {user && (
+              <Link to={`/${user.username}`} className="btn btn-secondary">
+                Открыть публичную страницу ↗
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </div>

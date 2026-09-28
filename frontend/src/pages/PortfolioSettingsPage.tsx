@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { useToast } from "../hooks/useToast";
 import { useAuth } from "../hooks/useAuth";
+import { CopyLinkButton } from "../components/ui/CopyLinkButton";
 import { profileApi } from "../services/profile";
 import { projectsApi } from "../services/projects";
 import type { Profile, Project } from "../types";
@@ -71,9 +72,12 @@ export function PortfolioSettingsPage() {
           </p>
         </div>
         {user && (
-          <Link to={`/${user.username}`} className="btn btn-primary">
-            Открыть публичную страницу ↗
-          </Link>
+          <div className="share-actions">
+            <CopyLinkButton to={`/${user.username}`} />
+            <Link to={`/${user.username}`} className="btn btn-primary">
+              Открыть публичную страницу ↗
+            </Link>
+          </div>
         )}
       </div>
 
@@ -109,10 +113,16 @@ export function PortfolioSettingsPage() {
         <ul className="published-list">
           {published.map((p) => (
             <li key={p.id}>
-              <span>{p.title}</span>
-              <span className="muted">
-                /{user?.username}/projects/{p.slug}
-              </span>
+              <div className="published-list-main">
+                <span>{p.title}</span>
+                <span className="muted">
+                  /{user?.username}/projects/{p.slug}
+                </span>
+              </div>
+              <CopyLinkButton
+                to={`/${user?.username}/projects/${p.slug}`}
+                label="Скопировать"
+              />
             </li>
           ))}
         </ul>
