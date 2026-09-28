@@ -81,14 +81,21 @@ portfolio-platform/
 Все endpoints доступны под префиксом `/api/v1`. Swagger: http://localhost:8000/docs
 
 ```text
-AUTH         POST /auth/register, POST /auth/login, GET /auth/me
+AUTH         POST /auth/register, POST /auth/login, POST /auth/logout, GET /auth/me
+SESSION      httpOnly cookie `portfolio_session` (SameSite=Lax) — the JWT is
+             never returned in the response body and never stored in JS.
+             `Authorization: Bearer <jwt>` also works for API clients.
 PROFILE      GET/PUT /profile, POST /profile/avatar
 PROJECTS     GET/POST /projects, GET/PUT/DELETE /projects/{id}, PUT /projects/reorder
 PUBLISH      POST /projects/{id}/publish, POST /projects/{id}/unpublish
 TECH         GET /technologies, PUT /projects/{id}/technologies
 IMAGES       POST /projects/{id}/images, DELETE /projects/{id}/images/{image_id}
 PUBLIC       GET /public/{username}, GET /public/{username}/projects/{slug}
+SITEMAP      GET /public/sitemap.xml
 ```
+
+`GET /public/{username}` accepts optional `?page=&limit=` (max 50). `skills`
+always covers the whole portfolio, not just the current page.
 
 ## Testing
 
@@ -121,6 +128,7 @@ Environment variables for Render:
 DATABASE_URL   = postgresql+psycopg2://... (Neon connection string)
 JWT_SECRET     = <random 64-hex string>
 CORS_ORIGINS   = https://<your-app>.vercel.app
+PUBLIC_URL     = https://<your-app>.vercel.app   # used by sitemap.xml
 ```
 
 ### Email for password reset codes
