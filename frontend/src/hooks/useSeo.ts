@@ -51,6 +51,7 @@ export function usePersonSchema(portfolio: {
     telegram_url: string | null;
   };
   skills: string[];
+  projects: { id: string; title: string; slug: string }[];
 } | null) {
   useEffect(() => {
     if (!portfolio) {
@@ -86,6 +87,25 @@ export function usePersonSchema(portfolio: {
           name: `${name} — Портфолио`,
           ...(profile.headline ? { about: { "@type": "Person", name, jobTitle: profile.headline } } : {}),
           isPartOf: { "@type": "WebSite", name: SITE_NAME, url: window.location.origin },
+        },
+        {
+          // The project list as its own node, so the portfolio can surface as a
+          // list of case studies rather than an unlabelled set of links.
+          "@type": "ItemList",
+          name: `Проекты — ${name}`,
+          ...(portfolio.projects.length
+            ? {
+                itemListElement: portfolio.projects.map((project, index) => ({
+                  "@type": "ListItem",
+                  position: index + 1,
+                  url: new URL(
+                    `/${portfolio.username}/projects/${project.slug}`,
+                    window.location.origin,
+                  ).href,
+                  name: project.title,
+                })),
+              }
+            : {}),
         },
       ],
     });

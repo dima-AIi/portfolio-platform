@@ -105,6 +105,10 @@ describe("usePersonSchema", () => {
       telegram_url: "https://t.me/dmitriy",
     },
     skills: ["Python", "FastAPI"],
+    projects: [
+      { id: "1", title: "Telegram CRM", slug: "telegram-crm" },
+      { id: "2", title: "Analytics", slug: "analytics" },
+    ],
   };
 
   function graph(index: number) {
@@ -112,6 +116,24 @@ describe("usePersonSchema", () => {
     return (data?.["@graph"] as Record<string, unknown>[])[index];
   }
 
+  it("lists the projects as an ItemList with absolute URLs", () => {
+    renderHook(() => usePersonSchema(portfolio));
+
+    const list = graph(2);
+    expect(list["@type"]).toBe("ItemList");
+    const items = list.itemListElement as { position: number; url: string; name: string }[];
+    expect(items).toHaveLength(2);
+    expect(items[0].position).toBe(1);
+    expect(items[0].url).toBe(
+      new URL("/dmitriy/projects/telegram-crm", window.location.origin).href,
+    );
+    expect(items[1].name).toBe("Analytics");
+  });
+
+  it("omits itemListElement when the portfolio has no projects", () => {
+    renderHook(() => usePersonSchema({ ...portfolio, projects: [] }));
+    expect(graph(2).itemListElement).toBeUndefined();
+  });
   it("emits a Person node with name, role and skills", () => {
     renderHook(() => usePersonSchema(portfolio));
 
