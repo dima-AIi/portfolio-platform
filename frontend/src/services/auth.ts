@@ -1,12 +1,14 @@
 import { api } from "./api";
-import type { AuthResponse, User } from "../types";
+import type { User } from "../types";
 
 export const authApi = {
   register: (email: string, username: string, password: string) =>
-    api.post<AuthResponse>("/auth/register", { email, username, password }),
+    api.post<{ user: User }>("/auth/register", { email, username, password }),
 
   login: (email: string, password: string) =>
-    api.post<AuthResponse>("/auth/login", { email, password }),
+    api.post<{ user: User }>("/auth/login", { email, password }),
+
+  logout: () => api.post<void>("/auth/logout"),
 
   me: () => api.get<User>("/auth/me"),
 
@@ -30,11 +32,3 @@ export const authApi = {
   resetConfirm: (email: string, code: string, newPassword: string) =>
     api.post<void>("/auth/reset-confirm", { email, code, new_password: newPassword }),
 };
-
-export function saveToken(token: string) {
-  localStorage.setItem("token", token);
-}
-
-export function clearToken() {
-  localStorage.removeItem("token");
-}

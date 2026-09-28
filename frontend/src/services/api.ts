@@ -13,16 +13,14 @@ export class ApiError extends Error {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
+    // The session lives in an httpOnly cookie, so the browser must be told to
+    // send it. Same-origin requests include cookies by default, but VITE_API_BASE_URL
+    // may point at a different host in development.
+    credentials: "include",
     headers: {
-      ...authHeaders(),
       ...(options.body && !(options.body instanceof FormData)
         ? { "Content-Type": "application/json" }
         : {}),
@@ -43,8 +41,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const payload = data as ApiErrorPayload | null;
-    if (response.status === 401 && localStorage.getItem("token")) {
-      localStorage.removeItem("token");
+    if (response.status === 401) {
       window.dispatchEvent(new Event("auth:expired"));
     }
     throw new ApiError(

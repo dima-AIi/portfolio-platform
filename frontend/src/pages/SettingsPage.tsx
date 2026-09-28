@@ -9,7 +9,7 @@ import { PasswordStrength } from "../components/ui/PasswordStrength";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../hooks/useToast";
 import { ApiError } from "../services/api";
-import { authApi, clearToken } from "../services/auth";
+import { authApi } from "../services/auth";
 import { scorePassword } from "../utils/passwordStrength";
 
 export function SettingsPage() {
@@ -103,7 +103,9 @@ export function SettingsPage() {
     setDeleting(true);
     try {
       await authApi.deleteAccount(deletePassword);
-      clearToken();
+      // The account is gone, so its session cookie is meaningless. Ending the
+      // session clears it server-side, and the reload drops the in-memory user.
+      await authApi.logout();
       navigate("/", { replace: true });
       window.location.reload();
     } catch (err) {

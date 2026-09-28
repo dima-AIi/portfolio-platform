@@ -30,23 +30,23 @@ describe("api client", () => {
     });
   });
 
-  it("attaches the bearer token when one is stored", async () => {
-    localStorage.setItem("token", "jwt-123");
+  it("sends cookies so the httpOnly session is included", async () => {
     fetchMock.mockResolvedValue(jsonResponse({}));
 
     await api.get("/auth/me");
 
     const [, init] = fetchMock.mock.calls[0];
-    expect(init.headers.Authorization).toBe("Bearer jwt-123");
+    expect(init.credentials).toBe("include");
   });
 
-  it("omits the Authorization header when logged out", async () => {
+  it("does not read or write a token in localStorage", async () => {
     fetchMock.mockResolvedValue(jsonResponse({}));
 
     await api.get("/public/dmitriy");
 
-    const [, init] = fetchMock.mock.calls[0];
-    expect(init.headers.Authorization).toBeUndefined();
+    // The JWT lives in an httpOnly cookie; nothing may be persisted client-side.
+    expect(localStorage.length).toBe(0);
+    expect(document.cookie).not.toContain("jwt");
   });
 
   it("sets a JSON content type for plain bodies only", async () => {
@@ -82,15 +82,13 @@ describe("api client", () => {
     expect((error as ApiError).message).toBeTruthy();
   });
 
-  it("clears the token and notifies the app on 401", async () => {
-    localStorage.setItem("token", "expired");
+  it("notifies the app on 401 so the session is treated as expired", async () => {
     const expired = vi.fn();
     window.addEventListener("auth:expired", expired);
     fetchMock.mockResolvedValue(jsonResponse({ error: { code: "HTTP_ERROR", message: "no" } }, 401));
 
     await expect(api.get("/auth/me")).rejects.toBeInstanceOf(ApiError);
 
-    expect(localStorage.getItem("token")).toBeNull();
     expect(expired).toHaveBeenCalledTimes(1);
     window.removeEventListener("auth:expired", expired);
   });

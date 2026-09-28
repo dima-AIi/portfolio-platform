@@ -6,9 +6,9 @@ export interface User {
   username: string;
 }
 
+/** Login/register reply. The JWT is not exposed to the page — it is set as an
+ *  httpOnly cookie by the backend, so it cannot be read by JavaScript. */
 export interface AuthResponse {
-  access_token: string;
-  token_type: string;
   user: User;
 }
 
@@ -87,6 +87,10 @@ export interface PublicPortfolio {
   profile: Profile;
   projects: Project[];
   skills: string[];
+  /** Total published projects, so the UI knows whether more exist. */
+  total: number;
+  page: number | null;
+  limit: number | null;
 }
 
 export interface PublicProject {

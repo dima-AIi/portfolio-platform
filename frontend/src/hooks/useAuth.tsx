@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { authApi, clearToken, saveToken } from "../services/auth";
+import { authApi } from "../services/auth";
 import type { User } from "../types";
 
 interface AuthContextValue {
@@ -10,7 +10,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -22,15 +22,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    // The session cookie is httpOnly, so there is nothing to read up front —
+    // just ask the server who we are. A 401 simply means "logged out".
     authApi
       .me()
       .then(setUser)
-      .catch(() => clearToken())
+      .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,21 +38,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await authApi.login(email, password);
-    saveToken(response.access_token);
-    setUser(response.user);
+    const { user: authUser } = await authApi.login(email, password);
+    setUser(authUser);
   }, []);
 
   const register = useCallback(async (email: string, username: string, password: string) => {
-    const response = await authApi.register(email, username, password);
-    saveToken(response.access_token);
-    setUser(response.user);
+    const { user: authUser } = await authApi.register(email, username, password);
+    setUser(authUser);
   }, []);
 
-  const logout = useCallback(() => {
-    clearToken();
+  const logout = useCallback(async () => {
+    // Clear local state even if the request fails: the user asked to leave, and
+    // a stale session on screen is worse than a server-side cookie lingering.
     setUser(null);
     navigate("/");
+    try {
+      await authApi.logout();
+    } catch {
+      /* cookie expires on its own */
+    }
   }, [navigate]);
 
   const refreshUser = useCallback(async () => {
