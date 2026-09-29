@@ -36,9 +36,20 @@ def _evict_idle(now: float) -> None:
 
 
 def _client_ip(request: Request) -> str:
+    """Resolve the client IP for rate-limit bucketing.
+
+    Behind a proxy (Render, nginx) the socket peer is the proxy itself, so the
+    forwarded header is the only usable signal. A client can put whatever it
+    likes in its own `X-Forwarded-For`, and the trusted proxy *appends* the real
+    address to it, so the right-most entry is the one the proxy observed. Using
+    the left-most entry (client-controlled) let anyone reset the login limiter at
+    will by rotating a header, which defeats the whole brute-force defence.
+    """
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        candidates = [part.strip() for part in forwarded.split(",") if part.strip()]
+        if candidates:
+            return candidates[-1]
     return request.client.host if request.client else "unknown"
 
 

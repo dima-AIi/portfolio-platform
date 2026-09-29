@@ -5,6 +5,8 @@ import jwt
 from fastapi import Response
 
 from app.core.config import settings
+from app.utils.errors import AppError
+from app.utils.password_strength import BCRYPT_MAX_BYTES
 
 # Name of the session cookie. httpOnly keeps the token out of reach of any
 # JavaScript on the page, so an XSS bug can no longer exfiltrate the session.
@@ -12,7 +14,18 @@ SESSION_COOKIE_NAME = "portfolio_session"
 
 
 def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    raw = password.encode("utf-8")
+    if len(raw) > BCRYPT_MAX_BYTES:
+        # bcrypt 5 raises here. Request schemas already reject such passwords,
+        # so reaching this point means a caller bypassed validation; fail loudly
+        # instead of silently truncating, which would make two different
+        # passwords that share a 72-byte prefix interchangeable.
+        raise AppError(
+            "PASSWORD_TOO_LONG",
+            f"Пароль слишком длинный: максимум {BCRYPT_MAX_BYTES} байт.",
+            422,
+        )
+    return bcrypt.hashpw(raw, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(password: str, password_hash: str) -> bool:

@@ -2,7 +2,16 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from app.utils.password_strength import validate_password_strength
+from app.utils.password_strength import (
+    validate_password_length,
+    validate_password_strength,
+)
+
+
+# Every user-supplied password goes through both checks, so bcrypt can never
+# receive more than it is able to hash.
+def _check_new_password(value: str) -> str:
+    return validate_password_length(validate_password_strength(value))
 
 
 class RegisterRequest(BaseModel):
@@ -13,7 +22,7 @@ class RegisterRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def check_password(cls, value: str) -> str:
-        return validate_password_strength(value)
+        return _check_new_password(value)
 
 
 class LoginRequest(BaseModel):
@@ -28,7 +37,7 @@ class PasswordChangeRequest(BaseModel):
     @field_validator("new_password")
     @classmethod
     def check_password(cls, value: str) -> str:
-        return validate_password_strength(value)
+        return _check_new_password(value)
 
 
 class EmailChangeRequest(BaseModel):
@@ -57,7 +66,7 @@ class ResetConfirm(BaseModel):
     @field_validator("new_password")
     @classmethod
     def check_password(cls, value: str) -> str:
-        return validate_password_strength(value)
+        return _check_new_password(value)
 
 
 class UserResponse(BaseModel):

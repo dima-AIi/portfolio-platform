@@ -1,12 +1,11 @@
 """Owner-facing data services: analytics, full export, GitHub import."""
 
 import uuid
-from datetime import datetime
 
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_db, utcnow
 from app.repositories.page_view_repository import PageViewRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.project_repository import ProjectRepository
@@ -63,7 +62,7 @@ class ExportService:
         return {
             "format": "portfolio-platform-export",
             "format_version": EXPORT_FORMAT_VERSION,
-            "exported_at": datetime.utcnow().isoformat() + "Z",
+            "exported_at": utcnow().isoformat(),
             "account": {"email": user.email, "username": user.username},
             "profile": self._profile_to_dict(profile),
             "projects": [

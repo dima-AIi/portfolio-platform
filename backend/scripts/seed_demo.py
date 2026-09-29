@@ -2,6 +2,12 @@
 
 Run with the backend server already running on localhost:8000:
     python scripts/seed_demo.py
+
+This is the *generic* sample account (Telegram CRM, Analytics Dashboard,
+...). The showcase account that the landing page links to lives in
+``seed_showcase.py`` and owns the ``demo`` username, so this one uses
+``demo-start`` — two seeds claiming one username used to collide, and the
+showcase silently lost.
 """
 
 import io
@@ -14,6 +20,10 @@ import zlib
 from typing import NamedTuple
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000") + "/api/v1"
+
+DEMO_EMAIL = "demo@example.com"
+DEMO_USERNAME = "demo-start"
+DEMO_PASSWORD = "demo12345"
 
 
 def png_bytes(width: int, height: int, top_rgb, bottom_rgb) -> bytes:
@@ -163,10 +173,10 @@ def main() -> int:
     print("== Seed demo user ==")
 
     result = call("POST", "/auth/register", body={
-        "email": "demo@example.com", "username": "demo", "password": "demo12345"})
+        "email": DEMO_EMAIL, "username": DEMO_USERNAME, "password": DEMO_PASSWORD})
     if result.status == 409:
         result = call("POST", "/auth/login", body={
-            "email": "demo@example.com", "password": "demo12345"})
+            "email": DEMO_EMAIL, "password": DEMO_PASSWORD})
     if result.status not in (200, 201):
         print(f"FAIL auth: {result.status} {result.data}")
         return 1
@@ -176,7 +186,10 @@ def main() -> int:
         return 1
     print("auth OK")
 
-    status, _ = call("PUT", "/profile", token, {
+    # call() returns a Response(status, data, set_cookie). Unpacking it as a
+    # 2-tuple raised ValueError right after the account was created, so this
+    # script registered a user and then died before adding any content.
+    status = call("PUT", "/profile", token, {
         "display_name": "Дмитрий К.",
         "headline": "Full-Stack разработчик",
         "bio": "Разрабатываю инструменты автоматизации и веб-приложения. "
@@ -188,17 +201,17 @@ def main() -> int:
     })
     print("profile:", "OK" if status == 200 else f"FAIL {status}")
 
-    techs = call("GET", "/technologies")[1]
+    techs = call("GET", "/technologies").data
     tech_by_name = {t["name"]: t["id"] for t in techs}
 
-    existing = call("GET", "/projects", token)[1]
+    existing = call("GET", "/projects", token).data
     existing_titles = {p["title"] for p in existing["items"]}
 
     for project in PROJECTS:
         if project["title"] in existing_titles:
             print(f"project '{project['title']}': already exists, skip")
             continue
-        status, created = call("POST", "/projects", token, {
+        created_response = call("POST", "/projects", token, {
             "title": project["title"],
             "short_description": project["short_description"],
             "problem": project["problem"],
@@ -209,25 +222,27 @@ def main() -> int:
             "github_url": project["github_url"],
             "live_url": project["live_url"],
         })
-        if status != 201:
-            print(f"project '{project['title']}': FAIL {status} {created}")
+        if created_response.status != 201:
+            print(f"project '{project['title']}': FAIL {created_response.status} "
+                  f"{created_response.data}")
             continue
+        created = created_response.data
         tech_ids = [tech_by_name[n] for n in project["technologies"] if n in tech_by_name]
         call("PUT", f"/projects/{created['id']}/technologies", token,
              {"technology_ids": tech_ids})
         w, h, top, bottom = project["cover"]
         upload(f"/projects/{created['id']}/images", token,
                f"{created['slug']}-cover.png", png_bytes(w, h, top, bottom))
-        cover_url = call("GET", f"/projects/{created['id']}", token)[1]["images"][0]["url"]
+        cover_url = call("GET", f"/projects/{created['id']}", token).data["images"][0]["url"]
         call("PUT", f"/projects/{created['id']}", token, {"cover_image_url": cover_url})
         call("POST", f"/projects/{created['id']}/publish", token)
         print(f"project '{project['title']}': created + published")
 
     print()
     print("Demo account ready:")
-    print("  login:    demo@example.com / demo12345")
+    print(f"  login:    {DEMO_EMAIL} / {DEMO_PASSWORD}")
     print("  dashboard http://localhost:5173/dashboard")
-    print("  public    http://localhost:5173/demo")
+    print(f"  public    http://localhost:5173/{DEMO_USERNAME}")
     return 0
 
 

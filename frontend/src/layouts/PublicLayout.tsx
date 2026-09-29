@@ -1,6 +1,10 @@
 import { Link, Outlet } from "react-router-dom";
 
+import { useAuth } from "../hooks/useAuth";
+
 export function PublicLayout() {
+  const { user } = useAuth();
+
   return (
     <div className="public-layout">
       <header className="public-header">
@@ -9,12 +13,25 @@ export function PublicLayout() {
             PP
           </Link>
           <nav className="public-header-nav">
-            <Link to="/login" className="btn btn-ghost btn-sm">
-              Войти
-            </Link>
-            <Link to="/register" className="btn btn-primary btn-sm">
-              Создать портфолио
-            </Link>
+            {/* An owner previewing their own page should see the way back to
+                the dashboard, not a second "Создать портфолио" call to action. */}
+            {user ? (
+              <>
+                <Link to="/dashboard" className="btn btn-ghost btn-sm">
+                  В кабинет
+                </Link>
+                <span className="public-header-user">@{user.username}</span>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-ghost btn-sm">
+                  Войти
+                </Link>
+                <Link to="/register" className="btn btn-primary btn-sm">
+                  Создать портфолио
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>

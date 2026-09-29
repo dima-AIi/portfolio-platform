@@ -137,12 +137,17 @@ export function ProjectEditorPage() {
         navigate(`/dashboard/projects/${created.id}`, { replace: true });
         return withTechs;
       }
-      const updated = await projectsApi.update(projectId!, payload);
-      setProject(updated);
+      await projectsApi.update(projectId!, payload);
+      // Technologies are a first-class part of the case study, so every save
+      // applies them. Previously only the header button did, and the footer
+      // "Сохранить изменения" reported success while silently dropping the
+      // selection the user had just made.
+      const withTechs = await projectsApi.setTechnologies(projectId!, selectedTechIds);
+      setProject(withTechs);
       // The server now holds this text, so the local safety copy is stale.
       clearDraft();
       showSuccess("Проект сохранён");
-      return updated;
+      return withTechs;
     } catch (err) {
       const message = err instanceof ApiError ? err.message : "Не удалось сохранить проект.";
       setError(message);
@@ -150,18 +155,6 @@ export function ProjectEditorPage() {
       return null;
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleSaveAndTech = async () => {
-    const saved = await handleSave();
-    if (!saved || isNew) return;
-    try {
-      const updated = await projectsApi.setTechnologies(saved.id, selectedTechIds);
-      setProject(updated);
-      showSuccess("Технологии обновлены");
-    } catch (err) {
-      showError(err instanceof ApiError ? err.message : "Не удалось обновить технологии");
     }
   };
 
@@ -224,7 +217,7 @@ export function ProjectEditorPage() {
                   : "Опубликовать"}
             </Button>
           )}
-          <Button onClick={handleSaveAndTech} disabled={saving || publishing}>
+          <Button onClick={() => void handleSave()} disabled={saving || publishing}>
             {saving ? "Сохранение…" : "Сохранить"}
           </Button>
           <Link to="/dashboard/projects" className="btn btn-ghost">
@@ -376,11 +369,10 @@ export function ProjectEditorPage() {
           {!isNew && project && (
             <ProjectImages
               project={project}
-              onProjectChange={setProject}
+              onProjectChange={(updater) => setProject((prev) => (prev ? updater(prev) : prev))}
               onError={(msg) => showError(msg)}
             />
           )}
-
           <div className="form-actions editor-footer">
             <Button type="submit" size="lg" disabled={saving}>
               {saving ? "Сохранение…" : isNew ? "Создать проект" : "Сохранить изменения"}

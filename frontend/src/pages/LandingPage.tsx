@@ -3,10 +3,17 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useSeo } from "../hooks/useSeo";
 
-/** Screenshots of the showcase portfolio, served from /demo/elora. */
+/**
+ * Screenshots of the showcase portfolio, served from /demo/elora.
+ *
+ * Order matters: the cover carries the ELORA wordmark and reads instantly,
+ * the promo shot is soft and on-brand, and the gallery close-up shows the
+ * studio's actual work. A full-bleed portrait used to sit in the middle
+ * slot — cropped hard by the card and carrying no product or brand signal.
+ */
 const SHOWCASE_SHOTS = [
   { src: "/demo/elora/og-cover.jpg", alt: "Обложка кейса ELORA" },
-  { src: "/demo/elora/hero.jpg", alt: "Главная страница ELORA" },
+  { src: "/demo/elora/promo.jpg", alt: "Фирменный стиль ELORA" },
   { src: "/demo/elora/manicure-01.jpg", alt: "Галерея работ ELORA" },
 ];
 

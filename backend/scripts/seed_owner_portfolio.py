@@ -1,27 +1,37 @@
-"""Seed the showcase portfolio: a filled public page visitors can actually open.
+"""Create or refresh the owner's real portfolio account.
 
-The ELORA case study documents a real deployed project — an online booking
-service for a beauty studio — in the Problem -> Solution -> Result -> Stack
-shape this platform is built around. Screenshots are pulled from the live
-site so the showcase shows the real thing, not a mockup.
+Built for the case where the showcase account is no longer wanted and the
+public page should belong to a real person instead. Credentials are read
+from the environment so a password never reaches the repository:
 
-Run with the backend already running on localhost:8000:
-    python scripts/seed_showcase.py
+    set SEED_EMAIL=zavtrawes@gmail.com
+    set SEED_USERNAME=zavtrawes
+    set SEED_PASSWORD=...
+    set SEED_BASE=https://portfolio-backend-rdaw.onrender.com
+    python scripts/seed_owner_portfolio.py
+
+SEED_BASE defaults to http://localhost:8000. Re-running is safe: an
+existing project with the same title is updated rather than duplicated.
 """
 
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
 from typing import NamedTuple
 
-BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000") + "/api/v1"
+sys.stdout.reconfigure(encoding="utf-8")
 
-DEMO_EMAIL = "demo@portfolio-platform.dev"
-DEMO_USERNAME = "demo"
-DEMO_PASSWORD = "showcase-2026"
+BASE = os.environ.get("SEED_BASE", "http://localhost:8000").rstrip("/") + "/api/v1"
+EMAIL = os.environ.get("SEED_EMAIL", "").strip()
+USERNAME = os.environ.get("SEED_USERNAME", "").strip()
+PASSWORD = os.environ.get("SEED_PASSWORD", "")
 
 ELORA_URL = "https://elora2026.runasp.net"
+DISPLAY_NAME = "Дмитрий"
+GITHUB_URL = "https://github.com/dima-Ai"
+
 COVER_IMAGE = f"{ELORA_URL}/images/og-cover.jpg"
 GALLERY_IMAGES = [
     f"{ELORA_URL}/images/hero/hero.jpg",
@@ -29,20 +39,23 @@ GALLERY_IMAGES = [
     f"{ELORA_URL}/images/works/manicure-01.jpg",
     f"{ELORA_URL}/images/works/lashes-01.jpg",
 ]
-PROJECT_TECHNOLOGIES = ["C#", "ASP.NET Core", "HTML/CSS", "JavaScript", "PostgreSQL", "PWA", "SEO"]
+PROJECT_TECHNOLOGIES = [
+    "C#", "ASP.NET Core", "HTML/CSS", "JavaScript", "PostgreSQL", "PWA", "SEO",
+]
 
 PROFILE = {
-    "display_name": "Дмитрий К.",
+    "display_name": DISPLAY_NAME,
     "headline": "Full-Stack разработчик",
     "bio": (
-        "Собираю веб-сервисы, которые решают конкретную задачу бизнеса: "
-        "от записи клиентов до внутренних инструментов. Каждый проект "
-        "показываю через кейс — проблема, решение, результат."
+        "Разрабатываю веб-сервисы, которые решают конкретную задачу бизнеса. "
+        "Каждый проект показываю как кейс: проблема, решение, результат и стек. "
+        "Из последнего — онлайн-запись для студии красоты ELORA."
     ),
     "location": "Москва",
     "website_url": ELORA_URL,
-    "github_url": "https://github.com/dima-Ai",
-    # No public Telegram handle yet — omitting it hides the button on the page.
+    "github_url": GITHUB_URL,
+    # No public Telegram handle — omitting the field hides the button instead
+    # of rendering a link that goes nowhere.
     "telegram_url": None,
     "theme": "classic",
 }
@@ -57,8 +70,8 @@ class Response(NamedTuple):
 def call(method: str, path: str, token: str | None = None, body: dict | None = None):
     """Perform a request.
 
-    The session JWT arrives in an httpOnly cookie; this script is not a browser,
-    so it replays the cookie value as an Authorization header.
+    The session JWT arrives in an httpOnly cookie; this script is not a
+    browser, so it replays the cookie value as an Authorization header.
     """
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(
@@ -71,7 +84,7 @@ def call(method: str, path: str, token: str | None = None, body: dict | None = N
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             payload = resp.read()
             cookie = resp.headers.get("set-cookie", "")
             return Response(resp.status, json.loads(payload) if payload else None, cookie)
@@ -79,6 +92,12 @@ def call(method: str, path: str, token: str | None = None, body: dict | None = N
         payload = e.read()
         cookie = e.headers.get("set-cookie", "")
         return Response(e.code, json.loads(payload) if payload else None, cookie)
+    except urllib.error.URLError as e:
+        # A refused connection means the API is not reachable (wrong SEED_BASE,
+        # backend not started). Say so instead of dumping a traceback.
+        print(f"FAIL: cannot reach {BASE} — {e.reason}")
+        print("Start the backend, or point SEED_BASE at the right host.")
+        sys.exit(1)
 
 
 def session_token(result) -> str:
@@ -90,15 +109,15 @@ def session_token(result) -> str:
 
 def download(url: str) -> bytes | None:
     try:
-        with urllib.request.urlopen(url, timeout=30) as resp:
+        with urllib.request.urlopen(url, timeout=60) as resp:
             return resp.read()
-    except Exception as exc:  # noqa: BLE001 - a dead screenshot must not abort the seed
+    except Exception as exc:  # noqa: BLE001 - a dead screenshot must not abort the run
         print(f"  WARN could not fetch {url}: {exc}")
         return None
 
 
 def upload_image(path: str, token: str, content: bytes) -> dict | None:
-    boundary = "----ShowcaseSeed5a1b"
+    boundary = "----OwnerSeed4b9c"
     body = (
         f"--{boundary}\r\n"
         'Content-Disposition: form-data; name="file"; filename="shot.jpg"\r\n'
@@ -114,7 +133,7 @@ def upload_image(path: str, token: str, content: bytes) -> dict | None:
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as exc:
         print(f"  WARN upload failed ({exc.code}) for {path}")
@@ -123,26 +142,19 @@ def upload_image(path: str, token: str, content: bytes) -> dict | None:
 
 def ensure_account() -> str:
     result = call("POST", "/auth/register", body={
-        "email": DEMO_EMAIL, "username": DEMO_USERNAME, "password": DEMO_PASSWORD})
+        "email": EMAIL, "username": USERNAME, "password": PASSWORD})
     if result.status == 409:
-        # A 409 here is ambiguous: either this account already exists (retry
-        # with a login) or the username belongs to somebody else. Silently
-        # falling through to a login used to leave the showcase missing while
-        # the script reported success against another account's page.
         payload = result.data if isinstance(result.data, dict) else {}
         code = (payload.get("error") or {}).get("code")
         if code == "USERNAME_ALREADY_EXISTS":
             print(
-                f"FAIL: username '{DEMO_USERNAME}' is already taken by a "
-                "different account.\n"
-                "The landing page links to this username, so the showcase "
-                "cannot be created until that account is removed or renamed.\n"
-                "See scripts/remove_accounts.py --dry-run to see what would "
-                "be deleted."
+                f"FAIL: username '{USERNAME}' is taken by a different account.\n"
+                "Pick another SEED_USERNAME, or remove the existing account "
+                "with scripts/remove_accounts.py."
             )
             sys.exit(1)
         result = call("POST", "/auth/login", body={
-            "email": DEMO_EMAIL, "password": DEMO_PASSWORD})
+            "email": EMAIL, "password": PASSWORD})
     if result.status not in (200, 201):
         print(f"FAIL auth: {result.status} {result.data}")
         sys.exit(1)
@@ -150,12 +162,14 @@ def ensure_account() -> str:
     if not token:
         print("FAIL auth: no session cookie in response")
         sys.exit(1)
-    print(f"auth OK as @{DEMO_USERNAME}")
+    print(f"auth OK as @{USERNAME}")
     return token
 
 
+PROJECT_TITLE = "ELORA — онлайн-запись в студию красоты"
+
 ELORA_PROJECT = {
-    "title": "ELORA — онлайн-запись в студию красоты",
+    "title": PROJECT_TITLE,
     "short_description": (
         "Сервис онлайн-записи для салона: 24 услуги, бронирование слотов "
         "без пересечений, личный кабинет и PWA."
@@ -208,7 +222,16 @@ ELORA_PROJECT = {
 
 
 def main() -> int:
-    print("== Seed showcase portfolio ==")
+    missing = [
+        name for name, value in
+        (("SEED_EMAIL", EMAIL), ("SEED_USERNAME", USERNAME), ("SEED_PASSWORD", PASSWORD))
+        if not value
+    ]
+    if missing:
+        print("FAIL: set the environment variables first: " + ", ".join(missing))
+        return 1
+
+    print("== Account ==")
     token = ensure_account()
 
     print("== Profile ==")
@@ -218,12 +241,11 @@ def main() -> int:
     print("== Project ==")
     existing = call("GET", "/projects", token).data
     items = existing.get("items", []) if isinstance(existing, dict) else []
-    match = next((p for p in items if p["title"] == ELORA_PROJECT["title"]), None)
+    match = next((p for p in items if p["title"] == PROJECT_TITLE), None)
 
     if match:
-        # Refresh the copy so re-running the seed picks up edited case text.
         status = call("PUT", f"/projects/{match['id']}", token, ELORA_PROJECT).status
-        print(f"  {'OK' if status == 200 else 'FAIL'} updated existing {match['id']}")
+        print(f"  {'OK' if status == 200 else 'FAIL'} updated {match['id']}")
         project = match
     else:
         result = call("POST", "/projects", token, ELORA_PROJECT)
@@ -261,10 +283,13 @@ def main() -> int:
     print(f"  {'OK' if status == 200 else 'FAIL'} publish -> {status}")
 
     print()
-    print(f"Showcase ready: /{DEMO_USERNAME}")
-    print(f"Login: {DEMO_EMAIL} / {DEMO_PASSWORD}")
+    print("Portfolio ready:")
+    print(f"  public page   {BASE.split('/api')[0]}/{USERNAME}")
+    print(f"  login         {EMAIL}")
+    print("  (the password is the SEED_PASSWORD you set — it is never printed)")
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
+

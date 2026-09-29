@@ -108,3 +108,30 @@ class TestAccountDeletion:
             json={"email": "fresh@example.com", "username": "owner", "password": "strongpass123"},
         )
         assert response.status_code == 201
+
+    def test_delete_account_removes_analytics_rows(self, client, auth_headers):
+        """page_views has no ORM cascade, so it used to outlive the account."""
+        from app.core.database import SessionLocal
+        from app.models import PageView
+
+        project = create_project(client, auth_headers, title="Tracked")
+        client.post(f"/api/v1/projects/{project['id']}/publish", headers=auth_headers)
+        client.get("/api/v1/public/owner")
+        client.get("/api/v1/public/owner/projects/tracked")
+
+        db = SessionLocal()
+        assert db.query(PageView).count() == 2
+        db.close()
+
+        response = client.request(
+            "DELETE",
+            "/api/v1/auth/account",
+            headers=auth_headers,
+            json={"password": "strongpass123"},
+        )
+        assert response.status_code == 204
+
+        db = SessionLocal()
+        assert db.query(PageView).count() == 0, "analytics rows survived deletion"
+        db.close()
+

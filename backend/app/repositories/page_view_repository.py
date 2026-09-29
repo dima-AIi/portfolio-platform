@@ -114,6 +114,15 @@ class PageViewRepository:
         ]
 
     def delete_for_user(self, user_id: uuid.UUID) -> None:
-        self.db.execute(select(PageView).where(PageView.user_id == user_id))
-        self.db.query(PageView).filter(PageView.user_id == user_id).delete()
+        """Drop a user's analytics rows.
+
+        page_views has no ORM relationship to User, so the ORM cascade does not
+        cover it. The `ondelete="CASCADE"` on the column only fires where the
+        database enforces foreign keys — SQLite does not unless explicitly
+        enabled — which silently left traffic rows behind after an account
+        deletion. Deleting them explicitly works on every backend.
+        """
+        self.db.query(PageView).filter(PageView.user_id == user_id).delete(
+            synchronize_session=False
+        )
         self.db.commit()
