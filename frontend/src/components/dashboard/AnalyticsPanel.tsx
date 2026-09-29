@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { analyticsApi, type AnalyticsSummary } from "../../services/ownerData";
+import { ErrorBanner } from "../ui/ErrorBanner";
 import { plural } from "../../utils/plural";
 
 const WINDOWS = [
@@ -32,6 +33,9 @@ export function AnalyticsPanel() {
   const [data, setData] = useState<AnalyticsSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Bumped to re-run the effect: the window switcher must stay usable so a
+  // failed load can be retried or narrowed instead of leaving a dead panel.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,9 +57,7 @@ export function AnalyticsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [days]);
-
-  if (error) return <p className="muted">{error}</p>;
+  }, [days, attempt]);
 
   return (
     <section className="dash-section">
@@ -75,7 +77,11 @@ export function AnalyticsPanel() {
         </div>
       </div>
 
-      {loading && !data ? (
+      {error ? (
+        <div className="card card-pad">
+          <ErrorBanner message={error} onRetry={() => setAttempt((n) => n + 1)} />
+        </div>
+      ) : loading && !data ? (
         <div className="card card-pad">
           <div className="spinner" />
         </div>
