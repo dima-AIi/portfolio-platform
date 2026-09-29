@@ -1,10 +1,14 @@
 import re
 import uuid
 
+# Must stay in sync with the routes the SPA owns (frontend/src/app/AppRoutes.tsx).
+# Every top-level path listed there wins over "/:username", so a portfolio with
+# one of these names could be created but would never be reachable.
 RESERVED_USERNAMES = {
     "login", "register", "dashboard", "api", "admin", "settings",
     "public", "uploads", "static", "assets", "logout", "profile",
     "projects", "portfolio", "docs", "openapi.json", "health",
+    "forgot-password", "forgot_password",
 }
 
 USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{2,29}$")
