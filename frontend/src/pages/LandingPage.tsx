@@ -4,12 +4,14 @@ import { useAuth } from "../hooks/useAuth";
 import { useSeo } from "../hooks/useSeo";
 
 /**
- * Screenshots of the showcase portfolio, served from /dmitry/elora.
+ * Showcase screenshots, committed under frontend/public so they survive a
+ * backend restart. The path is a static asset location, not an account name:
+ * the live showcase account is /zavtrawes, and the project cover points at
+ * this same folder so it stays valid as long as the files are committed.
  *
  * Order matters: the cover carries the ELORA wordmark and reads instantly,
  * the promo shot is soft and on-brand, and the gallery close-up shows the
- * studio's actual work. A full-bleed portrait used to sit in the middle
- * slot — cropped hard by the card and carrying no product or brand signal.
+ * studio's actual work.
  */
 const SHOWCASE_SHOTS = [
   { src: "/dmitry/elora/og-cover.jpg", alt: "Обложка кейса ELORA" },
@@ -106,8 +108,8 @@ export function LandingPage() {
                 <i />
                 <i />
               </span>
-              <Link to="/dmitry" className="showcase-window-url">
-                /dmitry
+              <Link to="/zavtrawes" className="showcase-window-url">
+                /zavtrawes
               </Link>
             </div>
 
@@ -115,7 +117,7 @@ export function LandingPage() {
               <div className="showcase-profile">
                 <div className="showcase-avatar">Д</div>
                 <div>
-                  <strong>Дмитрий К.</strong>
+                  <strong>Дмитрий</strong>
                   <span>Full-Stack разработчик</span>
                 </div>
                 <div className="tech-row showcase-techs">
@@ -141,7 +143,7 @@ export function LandingPage() {
                   24 услуги, запись в 8 шагов и серверный контроль пересечений слотов.
                   Полный кейс — с проблемой, решением и результатом.
                 </p>
-                <Link to="/dmitry" className="btn btn-primary">
+                <Link to="/zavtrawes" className="btn btn-primary">
                   Открыть портфолио →
                 </Link>
               </div>
@@ -149,8 +151,8 @@ export function LandingPage() {
           </div>
 
           <p className="showcase-note">
-            Это демонстрационный аккаунт. Зарегистрируйтесь — и ваше портфолио
-            будет выглядеть так же, только с вашими проектами.
+            Это реальный аккаунт на этой платформе. Зарегистрируйтесь — и ваше
+            портфолио будет выглядеть так же, только с вашими проектами.
           </p>
         </div>
       </section>

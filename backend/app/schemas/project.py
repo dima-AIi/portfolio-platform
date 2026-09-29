@@ -35,13 +35,18 @@ class ProjectCreate(BaseModel):
     role: str | None = Field(default=None, max_length=120)
     github_url: HttpUrl | None = None
     live_url: HttpUrl | None = None
+    # Accepted on create too. It used to live only on ProjectUpdate, so a POST
+    # carrying it was silently dropped and the project came back with no cover.
+    # A plain string, not HttpUrl: this may be a repo-hosted path
+    # ("/uploads/x.jpg") or an absolute URL to a committed asset, and both must
+    # survive a backend restart — uploaded files live on an ephemeral disk.
+    cover_image_url: str | None = Field(default=None, max_length=500)
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
 
 class ProjectUpdate(ProjectCreate):
     title: str | None = Field(default=None, max_length=120)
-    cover_image_url: str | None = Field(default=None, max_length=500)
 
 
 class ProjectResponse(BaseModel):

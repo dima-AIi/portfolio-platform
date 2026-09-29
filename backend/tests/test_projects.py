@@ -3,6 +3,55 @@ import uuid
 from tests.conftest import create_project
 
 
+class TestProjectCover:
+    """cover_image_url is accepted on create, not only on update."""
+
+    def test_cover_can_be_set_at_creation(self, client, auth_headers):
+        # The field used to live only on ProjectUpdate, so a POST carrying it
+        # came back with no cover and no error at all.
+        response = client.post(
+            "/api/v1/projects",
+            headers=auth_headers,
+            json={"title": "С обложкой", "cover_image_url": "https://example.com/cover.jpg"},
+        )
+        assert response.status_code == 201, response.text
+        assert response.json()["cover_image_url"] == "https://example.com/cover.jpg"
+
+    def test_cover_accepts_a_relative_upload_path(self, client, auth_headers):
+        response = client.post(
+            "/api/v1/projects",
+            headers=auth_headers,
+            json={"title": "Локальная обложка", "cover_image_url": "/uploads/x.jpg"},
+        )
+        assert response.status_code == 201, response.text
+        assert response.json()["cover_image_url"] == "/uploads/x.jpg"
+
+    def test_create_without_cover_is_unaffected(self, client, auth_headers):
+        response = client.post(
+            "/api/v1/projects", headers=auth_headers, json={"title": "Без обложки"}
+        )
+        assert response.status_code == 201
+        assert response.json()["cover_image_url"] is None
+
+    def test_cover_rejects_an_overlong_value(self, client, auth_headers):
+        response = client.post(
+            "/api/v1/projects",
+            headers=auth_headers,
+            json={"title": "Длинная ссылка", "cover_image_url": "https://e.com/" + "x" * 600},
+        )
+        assert response.status_code == 422
+
+    def test_cover_can_still_be_changed_afterwards(self, client, auth_headers):
+        project = create_project(client, auth_headers, title="Смена обложки")
+        response = client.put(
+            f"/api/v1/projects/{project['id']}",
+            headers=auth_headers,
+            json={"cover_image_url": "/uploads/second.jpg"},
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["cover_image_url"] == "/uploads/second.jpg"
+
+
 class TestProjectCRUD:
     def test_create_project(self, client, auth_headers):
         data = create_project(client, auth_headers, title="Telegram CRM", problem="Manual work", solution="Built a CRM")
