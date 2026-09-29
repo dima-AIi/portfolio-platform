@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useSeo } from "../hooks/useSeo";
 
 /**
- * Screenshots of the showcase portfolio, served from /demo/elora.
+ * Screenshots of the showcase portfolio, served from /dmitry/elora.
  *
  * Order matters: the cover carries the ELORA wordmark and reads instantly,
  * the promo shot is soft and on-brand, and the gallery close-up shows the
@@ -12,9 +12,9 @@ import { useSeo } from "../hooks/useSeo";
  * slot — cropped hard by the card and carrying no product or brand signal.
  */
 const SHOWCASE_SHOTS = [
-  { src: "/demo/elora/og-cover.jpg", alt: "Обложка кейса ELORA" },
-  { src: "/demo/elora/promo.jpg", alt: "Фирменный стиль ELORA" },
-  { src: "/demo/elora/manicure-01.jpg", alt: "Галерея работ ELORA" },
+  { src: "/dmitry/elora/og-cover.jpg", alt: "Обложка кейса ELORA" },
+  { src: "/dmitry/elora/promo.jpg", alt: "Фирменный стиль ELORA" },
+  { src: "/dmitry/elora/manicure-01.jpg", alt: "Галерея работ ELORA" },
 ];
 
 const STEPS = [
@@ -106,8 +106,8 @@ export function LandingPage() {
                 <i />
                 <i />
               </span>
-              <Link to="/demo" className="showcase-window-url">
-                /demo
+              <Link to="/dmitry" className="showcase-window-url">
+                /dmitry
               </Link>
             </div>
 
@@ -141,7 +141,7 @@ export function LandingPage() {
                   24 услуги, запись в 8 шагов и серверный контроль пересечений слотов.
                   Полный кейс — с проблемой, решением и результатом.
                 </p>
-                <Link to="/demo" className="btn btn-primary">
+                <Link to="/dmitry" className="btn btn-primary">
                   Открыть портфолио →
                 </Link>
               </div>
