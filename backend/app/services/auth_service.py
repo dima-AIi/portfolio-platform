@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.database import get_db, utcnow
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models import User
+from app.repositories.page_view_repository import PageViewRepository
 from app.repositories.password_reset_repository import PasswordResetRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
@@ -28,8 +29,10 @@ GENERIC_RESET_DETAIL = "Если аккаунт с таким email сущест
 
 class AuthService:
     def __init__(self, db: Session = Depends(get_db)):
+        self.db = db
         self.repo = UserRepository(db)
         self.resets = PasswordResetRepository(db)
+        self.page_views = PageViewRepository(db)
 
     def register(self, data: RegisterRequest) -> TokenResponse:
         if not is_valid_username(data.username):
@@ -75,6 +78,10 @@ class AuthService:
             urls.extend(image.url for image in project.images)
             if project.cover_image_url:
                 urls.append(project.cover_image_url)
+        # Rows that no ORM relationship cascades to must go explicitly, or the
+        # account's data outlives the account it belongs to.
+        self.page_views.delete_for_user(user.id)
+        self.resets.invalidate_all(user.id)
         self.repo.delete(user)
         for url in dict.fromkeys(urls):
             delete_image_file(url)
