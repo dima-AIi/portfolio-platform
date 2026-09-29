@@ -525,49 +525,58 @@ DELETE /projects/{id}/images/{image_id}
 
 29. GitHub API
 
-GitHub интеграция является дополнительной функцией.
+GitHub используется только для чтения публичных данных и только
+по инициативе владельца аккаунта.
 
-GET /github/repositories
+GET /github/repos?username=<handle>
 
-Получение репозиториев пользователя.
+Требует authentication. Backend обращается к публичному API GitHub
+**без токена и без OAuth**. Форки исключены, ничего не сохраняется.
 
-Backend обращается к GitHub API.
+Response:
 
-Frontend получает нормализованные данные.
-
-Пример:
-
-[
-  {
-    "name": "telegram-crm",
-    "description": "CRM for Telegram businesses",
-    "url": "https://github.com/example/telegram-crm",
-    "language": "Python",
-    "stars": 4
-  }
-]
-30. POST /github/import
-
-Создаёт Draft Project на основе GitHub repository.
-
-Request
 {
-  "repository_url": "https://github.com/example/telegram-crm"
+  "repos": [
+    {
+      "name": "telegram-crm",
+      "description": "CRM for Telegram businesses",
+      "url": "https://github.com/example/telegram-crm",
+      "language": "Python",
+      "stars": 4,
+      "forks": 1,
+      "topics": ["crm", "telegram"],
+      "homepage": "",
+      "archived": false,
+      "updated_at": "2026-09-01T10:00:00Z"
+    }
+  ],
+  "count": 1
 }
+
+Ошибки: 404 GITHUB_USER_NOT_FOUND, 429 GITHUB_RATE_LIMIT,
+502 GITHUB_UNAVAILABLE / GITHUB_ERROR.
+
+30. Импорт репозитория в проект
+
+Отдельного эндпоинта импорта нет: выбранный репозиторий превращается
+в проект обычным POST /projects, который создаёт DRAFT-черновик.
+Пользователь редактирует его вручную и публикует сам.
 
 Backend:
 
 GitHub
  ↓
-Repository metadata
+Repository metadata (GET /github/repos)
  ↓
-Normalize
+Frontend заполняет форму
  ↓
-Create Project
+POST /projects
  ↓
 DRAFT
-
-Пользователь затем редактирует проект вручную.
+ ↓
+User edits
+ ↓
+Publish
 
 31. AI API
 
@@ -861,27 +870,36 @@ PUBLIC
 GET    /public/{username}
 GET    /public/{username}/projects/{slug}
 
-GITHUB и AI endpoints (POST-MVP, не входят в MVP):
-GET    /github/repositories
-POST   /github/import
+OWNER (требуют authentication, только свои данные)
+GET    /analytics?days=30
+GET    /export
+GET    /github/repos?username=<handle>
+GET    /public/sitemap.xml
+
+GITHUB (публичный API, без токена и OAuth — только чтение):
+GET    /github/repos?username=<handle>
+
+AI endpoint (POST-MVP, не реализован):
 POST   /ai/project-description
 45. API Priority
 P0 — обязательно
-Authentication
+Authentication (cookie session + Bearer fallback)
 Profile
 Projects CRUD
 Project publishing
 Public portfolio
 Technologies
 Images
-P1 — POST-MVP (не реализуется до завершения MVP)
-GitHub import
-AI description generation
-P2 — позже
-Analytics
-Custom domains
+P1 — реализовано
+Analytics (page_views, бакеты источников)
+Data export
+GitHub import (публичный API, без токена)
 Themes
-Social links expansion
+SEO: sitemap.xml, robots.txt, JSON-LD
+Cookie session вместо токена в localStorage
+P2 — позже
+Email verification
+Custom domains
 Portfolio templates
 Advanced AI
 46. Data Flow — Create Project
@@ -924,20 +942,22 @@ published_at
 PostgreSQL
  ↓
 Public Portfolio
-48. Data Flow — GitHub Import
+48. Data Flow — GitHub Repos
 User
  ↓
-Select GitHub Repository
+Dashboard → «Импорт из GitHub»
  ↓
-POST /github/import
+GET /github/repos?username=<handle>
  ↓
 GitHub Service
  ↓
-GitHub API
+GitHub public API (no token)
  ↓
-Normalize Data
+Normalize Data (forks dropped)
  ↓
-Create Draft Project
+Owner picks repositories
+ ↓
+POST /projects → DRAFT
  ↓
 User edits
  ↓
