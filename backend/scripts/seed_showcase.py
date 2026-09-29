@@ -125,6 +125,22 @@ def ensure_account() -> str:
     result = call("POST", "/auth/register", body={
         "email": DEMO_EMAIL, "username": DEMO_USERNAME, "password": DEMO_PASSWORD})
     if result.status == 409:
+        # A 409 here is ambiguous: either this account already exists (retry
+        # with a login) or the username belongs to somebody else. Silently
+        # falling through to a login used to leave the showcase missing while
+        # the script reported success against another account's page.
+        payload = result.data if isinstance(result.data, dict) else {}
+        code = (payload.get("error") or {}).get("code")
+        if code == "USERNAME_ALREADY_EXISTS":
+            print(
+                f"FAIL: username '{DEMO_USERNAME}' is already taken by a "
+                "different account.\n"
+                "The landing page links to this username, so the showcase "
+                "cannot be created until that account is removed or renamed.\n"
+                "See scripts/remove_accounts.py --dry-run to see what would "
+                "be deleted."
+            )
+            sys.exit(1)
         result = call("POST", "/auth/login", body={
             "email": DEMO_EMAIL, "password": DEMO_PASSWORD})
     if result.status not in (200, 201):
