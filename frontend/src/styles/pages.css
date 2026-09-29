@@ -2182,22 +2182,6 @@
   background: var(--color-border-strong);
 }
 
-.showcase-window-url {
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  text-decoration: none;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  padding: 2px 14px;
-}
-
-.showcase-window-url:hover {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
 .showcase-window-body {
   padding: var(--space-6);
   display: grid;

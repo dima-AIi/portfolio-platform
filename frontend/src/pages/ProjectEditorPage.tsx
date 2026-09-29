@@ -345,7 +345,7 @@ export function ProjectEditorPage() {
           <section className="card card-pad editor-section">
             <h3>Ссылки</h3>
             <div className="form-grid">
-              <Field label="Live Demo (работающий проект)" error={validation.live_url}>
+              <Field label="Ссылка на работающий сайт" error={validation.live_url}>
                 <Input
                   type="url"
                   value={project?.live_url ?? ""}

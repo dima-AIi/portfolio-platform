@@ -108,9 +108,6 @@ export function LandingPage() {
                 <i />
                 <i />
               </span>
-              <Link to="/zavtrawes" className="showcase-window-url">
-                /zavtrawes
-              </Link>
             </div>
 
             <div className="showcase-window-body">

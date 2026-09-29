@@ -136,7 +136,7 @@ export function PublicProjectPage() {
         <div className="pf-project-links">
           {project.live_url && (
             <a href={project.live_url} target="_blank" rel="noreferrer" className="btn btn-primary btn-lg">
-              Смотреть live demo ↗
+              Открыть сайт ↗
             </a>
           )}
           {project.github_url && (

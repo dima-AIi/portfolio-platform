@@ -60,7 +60,7 @@ export function ProjectPreview({ project }: ProjectPreviewProps) {
           <div className="preview-links">
             {project.live_url && (
               <a href={project.live_url} target="_blank" rel="noreferrer" className="btn btn-primary">
-                Live demo ↗
+                Открыть сайт ↗
               </a>
             )}
             {project.github_url && (
