@@ -30,10 +30,10 @@ from app.utils.rate_limit import rate_limit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-register_limit = rate_limit(max_requests=5, window_seconds=60)
-login_limit = rate_limit(max_requests=10, window_seconds=60)
-reset_request_limit = rate_limit(max_requests=3, window_seconds=60)
-reset_confirm_limit = rate_limit(max_requests=10, window_seconds=60)
+register_limit = rate_limit(max_requests=5, window_seconds=60, path_max=60)
+login_limit = rate_limit(max_requests=10, window_seconds=60, path_max=300)
+reset_request_limit = rate_limit(max_requests=3, window_seconds=60, path_max=30)
+reset_confirm_limit = rate_limit(max_requests=10, window_seconds=60, path_max=100)
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
