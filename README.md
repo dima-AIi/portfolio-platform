@@ -97,6 +97,27 @@ SITEMAP      GET /public/sitemap.xml
 `GET /public/{username}` accepts optional `?page=&limit=` (max 50). `skills`
 always covers the whole portfolio, not just the current page.
 
+### Session, CSRF and rate limiting
+
+The session cookie (`SameSite=Lax`, `HttpOnly`, `Secure` in production) is
+the CSRF defence, and for the current endpoint set it is sufficient on its
+own:
+
+* every state-changing request is `POST`, `PUT` or `DELETE`, and browsers do
+  not attach `Lax` cookies to cross-site requests of those methods;
+* all of them require a JSON body, so a cross-origin attempt triggers a CORS
+  preflight that the allow-list rejects;
+* no endpoint performs a state change on `GET`.
+
+A separate CSRF token would only be required if a `GET` ever mutated state
+or if `SameSite=None` were needed for a cross-site embedding. Neither
+applies today, so no token is issued.
+
+Rate limits on `/auth/*` are an in-memory sliding window keyed by client IP
+plus path. Behind a proxy the right-most `X-Forwarded-For` entry is used,
+because that is the address the trusted proxy appended and therefore the one
+a client cannot forge.
+
 ## Showcase portfolio
 
 The landing page links to a filled demo account so a visitor can see a real page
