@@ -1,6 +1,11 @@
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Shipping this value unchanged means anyone can sign a session cookie for any
+# user id, so it must never survive a production boot.
+PLACEHOLDER_JWT_SECRET = "change-me-in-production"
 
 
 class Settings(BaseSettings):
@@ -8,7 +13,7 @@ class Settings(BaseSettings):
 
     ENV: str = "production"
     DATABASE_URL: str = "sqlite:///./app.db"
-    JWT_SECRET: str = "change-me-in-production"
+    JWT_SECRET: str = PLACEHOLDER_JWT_SECRET
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 720
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
@@ -39,6 +44,22 @@ class Settings(BaseSettings):
     @property
     def smtp_enabled(self) -> bool:
         return bool(self.SMTP_HOST and self.SMTP_USER and self.SMTP_PASSWORD)
+
+    @model_validator(mode="after")
+    def _reject_placeholder_secret(self) -> "Settings":
+        """Fail fast rather than sign sessions with a public key.
+
+        ENV defaults to "production", so a deployment that forgets JWT_SECRET
+        would otherwise boot happily and accept a hand-crafted cookie for any
+        user id. Refusing to start is the only safe outcome.
+        """
+        if self.ENV == "production" and self.JWT_SECRET == PLACEHOLDER_JWT_SECRET:
+            raise ValueError(
+                "JWT_SECRET is still the placeholder value while ENV=production. "
+                "Set a random secret before starting the server: "
+                'python -c "import secrets; print(secrets.token_hex(32))"'
+            )
+        return self
 
 
 @lru_cache

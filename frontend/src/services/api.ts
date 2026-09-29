@@ -50,7 +50,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const payload = data as ApiErrorPayload | null;
-    if (response.status === 401) {
+    // A 401 from the login form means "those credentials are wrong", not "your
+    // session died". Broadcasting here signed the user out of a perfectly good
+    // session whenever they mistyped a password on /login.
+    const sessionLost =
+      response.status === 401 && payload?.error?.code !== "INVALID_CREDENTIALS";
+    if (sessionLost) {
       window.dispatchEvent(new Event("auth:expired"));
     }
     throw new ApiError(

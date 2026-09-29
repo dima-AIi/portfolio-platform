@@ -11,19 +11,29 @@ const WINDOWS = [
   { days: 90, label: "90 дней" },
 ];
 
-/** Small inline bar chart — no chart library for four numbers a day. */
+/**
+ * Small inline bar chart — no chart library for four numbers a day.
+ *
+ * The series is a fixed trailing window, not the selected range, so the
+ * caption states the real span instead of letting the number above it
+ * ("N визитов за 30 дней") imply the chart covers those 30 days.
+ */
 function Sparkline({ points }: { points: { date: string; views: number }[] }) {
   const max = Math.max(...points.map((p) => p.views), 1);
+  const days = points.length;
   return (
-    <div className="spark" role="img" aria-label="Просмотры по дням">
-      {points.map((p) => (
-        <span
-          key={p.date}
-          className="spark-bar"
-          style={{ height: `${Math.max((p.views / max) * 100, 3)}%` }}
-          title={`${p.date}: ${p.views}`}
-        />
-      ))}
+    <div className="spark-wrap">
+      <div className="spark" role="img" aria-label={`Просмотры по дням за ${days} дней`}>
+        {points.map((p) => (
+          <span
+            key={p.date}
+            className="spark-bar"
+            style={{ height: `${Math.max((p.views / max) * 100, 3)}%` }}
+            title={`${p.date}: ${p.views}`}
+          />
+        ))}
+      </div>
+      <span className="spark-caption">последние {days} дней</span>
     </div>
   );
 }

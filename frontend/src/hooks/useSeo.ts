@@ -147,7 +147,18 @@ export function useSeo({ title, description, image, type = "website", canonicalP
     document.title = title;
     const canonical = canonicalPath ?? window.location.pathname;
     const url = new URL(window.location.origin + canonical).href;
-    const absoluteImage = image ? new URL(image, window.location.origin).href : null;
+    // A cover comes from user data, so it may be anything. new URL() throws on
+    // a malformed value, and this runs inside an effect with no error boundary
+    // above it — that unmounts the whole page for every visitor. Drop the
+    // image instead of taking the page down.
+    let absoluteImage: string | null = null;
+    if (image) {
+      try {
+        absoluteImage = new URL(image, window.location.origin).href;
+      } catch {
+        absoluteImage = null;
+      }
+    }
 
     setCanonical(url);
     setMeta("property", "og:title", title);

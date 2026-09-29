@@ -2,9 +2,16 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 ProjectStatus = Literal["DRAFT", "PUBLISHED"]
+
+# A cover may point at an upload on this backend ("/uploads/x.jpg") or at a
+# static file committed to the frontend repo (absolute https URL). Anything else
+# is rejected: a malformed value such as "http://" is not a rendering problem
+# only — the frontend resolves it with new URL() to build the OG image, and a
+# throw there unmounts the whole public page.
+_ALLOWED_COVER_PREFIX = "/uploads/"
 
 
 class ProjectTechnologySchema(BaseModel):
@@ -42,11 +49,20 @@ class ProjectCreate(BaseModel):
     # survive a backend restart — uploaded files live on an ephemeral disk.
     cover_image_url: str | None = Field(default=None, max_length=500)
 
+    @field_validator("cover_image_url")
+    @classmethod
+    def _check_cover(cls, value: str | None) -> str | None:
+        if value is None or value.startswith(_ALLOWED_COVER_PREFIX):
+            return value
+        # Re-validating as HttpUrl rejects "http://", javascript:, and every
+        # other shape that cannot become a real image reference.
+        return str(HttpUrl(value))
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
 
 class ProjectUpdate(ProjectCreate):
-    title: str | None = Field(default=None, max_length=120)
+    title: str | None = Field(default=None, min_length=1, max_length=120)
 
 
 class ProjectResponse(BaseModel):

@@ -644,8 +644,6 @@
   align-items: flex-end;
   gap: 3px;
   height: 56px;
-  flex: 1;
-  min-width: 180px;
 }
 
 .spark-bar {
@@ -659,6 +657,20 @@
 
 .spark-bar:hover {
   opacity: 1;
+}
+
+.spark-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.spark-caption {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-align: right;
 }
 
 .analytics-grid {

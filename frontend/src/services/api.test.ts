@@ -93,6 +93,28 @@ describe("api client", () => {
     window.removeEventListener("auth:expired", expired);
   });
 
+  it("keeps the session when the login form rejects the password", async () => {
+    // A wrong password is not a lost session. Broadcasting here signed the
+    // user out of a working session whenever they mistyped on /login.
+    const expired = vi.fn();
+    window.addEventListener("auth:expired", expired);
+    fetchMock.mockResolvedValue(
+      jsonResponse(
+        { error: { code: "INVALID_CREDENTIALS", message: "Неверный email или пароль." } },
+        401,
+      ),
+    );
+
+    const error = await api.post("/auth/login", { email: "a@b.c", password: "wrong" }).catch(
+      (err: unknown) => err,
+    );
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).code).toBe("INVALID_CREDENTIALS");
+    expect(expired).not.toHaveBeenCalled();
+    window.removeEventListener("auth:expired", expired);
+  });
+
   it("resolves 204 responses to undefined", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
     await expect(api.delete("/projects/1")).resolves.toBeUndefined();

@@ -41,6 +41,14 @@ describe("useSeo", () => {
     expect(metaContent('meta[name="twitter:card"]')).toBe("summary");
   });
 
+  it("does not throw on a malformed image URL", () => {
+    // A cover is user data and reaches new URL() from inside an effect with no
+    // error boundary above it. "http://" used to unmount the whole public page.
+    expect(() => renderHook(() => useSeo({ title: "T", image: "http://" }))).not.toThrow();
+    expect(metaContent('meta[property="og:image"]')).toBeNull();
+    expect(metaContent('meta[name="twitter:card"]')).toBe("summary");
+  });
+
   it("builds a canonical URL from the given path", () => {
     renderHook(() => useSeo({ title: "T", canonicalPath: "/dmitriy/projects/crm" }));
 
