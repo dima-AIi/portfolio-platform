@@ -35,3 +35,17 @@ def validate_password_strength(value: str) -> str:
     if classes < 2:
         raise ValueError("Пароль слишком простой: добавьте цифры или спецсимволы.")
     return value
+
+
+# bcrypt hashes at most 72 bytes and raises ValueError past that. Silently
+# truncating would make two passwords sharing a 72-byte prefix equivalent, so
+# the limit is enforced as a validation error instead.
+BCRYPT_MAX_BYTES = 72
+
+
+def validate_password_length(value: str) -> str:
+    if len(value.encode("utf-8")) > BCRYPT_MAX_BYTES:
+        raise ValueError(
+            f"Пароль слишком длинный: максимум {BCRYPT_MAX_BYTES} байт."
+        )
+    return value

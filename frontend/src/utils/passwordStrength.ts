@@ -17,6 +17,9 @@ const COMMON_PASSWORDS = new Set([
   "1234qwer", "asdfghjkl", "zxcvbnm123", "1234abcd",
 ]);
 
+/** bcrypt hashes at most 72 bytes; the API enforces the same ceiling. */
+export const PASSWORD_MAX_BYTES = 72;
+
 export interface StrengthInfo {
   score: 0 | 1 | 2 | 3 | 4;
   label: string;
@@ -37,6 +40,15 @@ export function scorePassword(pw: string): StrengthInfo {
   if (!pw) return { score: 0, label: "", ok: false };
   if (pw.length < 8)
     return { score: 0, label: "Слабый", ok: false, hint: "Минимум 8 символов." };
+  // bcrypt hashes at most 72 bytes and the API rejects more, so flag it here
+  // rather than letting the user fill a long password only to get a 422.
+  if (new TextEncoder().encode(pw).length > PASSWORD_MAX_BYTES)
+    return {
+      score: 0,
+      label: "Слишком длинный",
+      ok: false,
+      hint: `Пароль не может быть длиннее ${PASSWORD_MAX_BYTES} байт.`,
+    };
   if (COMMON_PASSWORDS.has(pw.toLowerCase()))
     return { score: 0, label: "Слабый", ok: false, hint: "Слишком распространённый пароль." };
 
